@@ -4,14 +4,22 @@
 
 import numpy as np
 from operator import attrgetter
+import matplotlib.pyplot as plt
 import copy
 import time
+import pdb
+import os
+import subprocess
+
+from  matplotlib import cm
+from matplotlib.colors import Normalize
 
 
 
 class Gene:
     """This class represents the registry of qubits that represents one element of the genotype encoding in a chromosome.
     """
+    #lookup_table = np.array([0, 0, 0.01*np.pi, 0, -0.01*np.pi, 0, 0, 0])
     lookup_table = np.array([0, 0, 0.01*np.pi, 0, -0.01*np.pi, 0, 0, 0])
     def __init__(self, register_size=1) -> None:
         self.register_size = register_size
@@ -52,14 +60,21 @@ class Gene:
         b_profit : int
             THe measured profit of the best solution
         """
-        # 
+
         cur_profit_comp = x_profit >= b_profit
         # Create index for lookup
         bit_string = self.decimal_result*2**2 + bi*2**1 + int(cur_profit_comp)*2**0
-        cur_rotation_angle = self.lookup_table[bit_string]
+        cur_rotation_angle = self.lookup_table[int(bit_string)]
         for qubit_index in range(self.register_size):
-            self.q_register[0, qubit_index] = np.cos(cur_rotation_angle)*self.q_register[0, qubit_index] - np.sin(cur_rotation_angle)*self.q_register[1, qubit_index]
-            self.q_register[1, qubit_index] = np.sin(cur_rotation_angle)*self.q_register[0, qubit_index] + np.cos(cur_rotation_angle)*self.q_register[1, qubit_index]
+            temp_alpha = self.q_register[0, qubit_index]
+            temp_beta = self.q_register[1, qubit_index]
+            if temp_alpha*temp_beta > 0:
+                # If in second or fourth quadrant, then the rotation angle must be inverted
+                cur_rotation_angle = cur_rotation_angle * -1
+
+            self.q_register[0, qubit_index] = np.cos(cur_rotation_angle)*temp_alpha - np.sin(cur_rotation_angle)*temp_beta
+            self.q_register[1, qubit_index] = np.sin(cur_rotation_angle)*temp_alpha + np.cos(cur_rotation_angle)*temp_beta
+            
 
 class Chromosome:
     """This class represents a solution of the Knapsack problem. 
@@ -69,6 +84,11 @@ class Chromosome:
         self.observed_chromosome : np.ndarray = np.zeros(size)
         for i in range(size):
             self.chromosome_content[i] = Gene.initialize_gene(gene_size)
+
+    def update(self, b) -> None:
+        gene : Gene
+        for i, gene in enumerate(self.chromosome_content):
+            gene.update_register(b.observed_chromosome[i], self.cur_profit, b.cur_profit)
 
     def make_observation(self) -> list:
         for i, gene in enumerate(self.chromosome_content):
@@ -110,8 +130,9 @@ class Chromosome:
                     cur_cost = cur_cost + cost_weights[cur_index]
                     self.observed_chromosome[cur_index] = 1
 
+
 class Population:
-    def __init__(self, population_size, chromosome_size, gene_size, cost_weights, cost_constraint, profit_weights, n_elite=5) -> None:
+    def __init__(self, population_size, chromosome_size, gene_size, cost_weights, cost_constraint, profit_weights, n_elite=3) -> None:
         self.n_elite = n_elite
         self.population : np.ndarray = np.empty(population_size, dtype=Chromosome)
         self.best_solutions = None
@@ -157,14 +178,28 @@ class Population:
             self.b = copy.deepcopy(self.population[0])
             self.best_solutions = copy.deepcopy(self.population[:self.n_elite])
         else:
-            # If in the while loop, create combine the population with the previous best solutions
+            # If in the while loop, combine the population with the previous best solutions
             self.best_solutions = sorted(np.concatenate((self.best_solutions, self.population)), key=attrgetter("cur_profit"), reverse=True)[:self.n_elite]
             # Check if the fitness value is better than previous best
             if self.b.cur_profit < self.best_solutions[0].cur_profit:
                 print(self.best_solutions[0].cur_profit)
                 self.b = copy.deepcopy(self.best_solutions[0])
 
+        cur_chromosome : Chromosome
+        for cur_chromosome in self.population:
+            cur_chromosome.update(self.b)
 
+    def add_to_plot(self, plot_array : np.ndarray, plot_counter : int) -> None:
+        """This method plots a snapshot of the population
+        """
+        # We need to concatenate all genes into a single numpy array of two dimensions
+        for i, chromo in enumerate(self.population):
+            for j, gene in enumerate(chromo.chromosome_content):
+                cur_gene_length = len(gene.q_register[0,:])
+                for k in range(cur_gene_length):
+                    plot_array[plot_counter, (i*2), j*cur_gene_length + k] = abs(gene.q_register[0, k])**2
+                    plot_array[plot_counter, (i*2)+1, j*cur_gene_length + k] = abs(gene.q_register[1, k])**2
+        
 
 class QEA_main_knapsack:
     """Main routine for the QEA that solves the 0/1-Knapsack problem
@@ -177,9 +212,10 @@ class QEA_main_knapsack:
                  global_migration_phase=100, 
                  local_migration=False) -> None:
         self.n_generations = n_generations
-        self.generation_count = 0 # t
+        self.generation_count = 1 # t
         self.global_migration_phase = global_migration_phase
         self.local_migration = local_migration
+        self.plot_array = np.zeros((10, 2*population_size*gene_size, chromosome_size))
         # Create cost and profit arrays
         np.random.seed(10)
         cost_weights = np.random.uniform(low=1, high=10, size=chromosome_size)
@@ -189,14 +225,36 @@ class QEA_main_knapsack:
         print("cur_constraint: " + str(C))
         # Create the initial population
         self.population_obj = Population(population_size, chromosome_size, gene_size, cost_weights, C, profit_weights)
+        self.population_obj.add_to_plot(self.plot_array, 0)
         self.population_obj.observe_population()
 
     def main(self):
+        divider = self.n_generations // 10
+        plot_counter = 1
         while self.generation_count < self.n_generations:
+            # Print the first quantum chromosome
+            if self.generation_count % divider == 0:
+                self.population_obj.add_to_plot(self.plot_array, plot_counter)
+                plot_counter += 1
+
             self.population_obj.observe_population()
             if self.global_migration_phase: self.population_obj.global_migration(self.generation_count, self.global_migration_phase)
             if self.local_migration: self.population_obj.local_migration()
             self.generation_count += 1
+
+
+        fig, axs = plt.subplots(2, 5, figsize=(15, 15))
+        for img_nr in range(plot_counter):
+            axs[img_nr // 5][img_nr % 5].imshow(np.transpose(self.plot_array[img_nr, :, :]), vmin=0, vmax=1, cmap="hot")
+            axs[img_nr // 5][img_nr % 5].set_title(f"Generation {img_nr * 10}")
+            
+        #plt.colorbar()
+        fig.subplots_adjust(right=0.8)
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+        fig.colorbar(cm.ScalarMappable(norm=Normalize(vmin=0, vmax=1), cmap="hot"), cax=cbar_ax)
+        plt.savefig(f"./knapsack_qga_logs/population_images/population_img.png")
+
+        
 
 
 if __name__=="__main__":
@@ -216,6 +274,9 @@ if __name__=="__main__":
         plt.plot(freq_table)
     plt.show()
     """
+    # Remove population images from previous run
+    subprocess.run(["powershell", "-Command", "rm", "./knapsack_qga_logs/population_images/*"], shell=True)
+
     #np.random.seed(10)
     # Number of times the optimization process is repeated for different problem cases
     runs = 1
@@ -225,12 +286,12 @@ if __name__=="__main__":
         # For each run, optimize the Knapsack problem using the QEA
         start_time = time.time()
         test_qga = QEA_main_knapsack(
-                population_size=10, 
-                chromosome_size=100, 
-                gene_size=1, 
-                n_generations=1000, 
-                global_migration_phase=100, 
-                local_migration=False
+                    population_size=10,
+                    chromosome_size=100,
+                    gene_size=1,
+                    n_generations=1000,
+                    global_migration_phase=100,
+                    local_migration=False
                 )
         test_qga.main()
         # Store best result from the optimization
