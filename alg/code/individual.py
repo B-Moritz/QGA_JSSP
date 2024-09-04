@@ -21,7 +21,7 @@ class Individual:
     def create_individual(n_jobs: int, n_machines: int):
         # Generator funciton for creating an individual object
         permutation = create_m_rep_permutation(n_jobs, n_machines)
-        return Individual(permutation)
+        return Individual(permutation, n_jobs, n_machines)
     
     def create_schedule(self, 
                         method: str, 
@@ -46,7 +46,7 @@ class Individual:
             self.schedule.activate_schedule()
 
         # Make fitness evaluations
-        self.cur_fitness = np.array([self.schedule.eval(f"get_{objectives[0]}")(), self.schedule.eval(f"get_{objectives[1]}")()])
+        self.cur_fitness = np.array([self.schedule.get_makespan(), self.schedule.get_mean_flow_time()])
         #self.schedule.get_flow_sum()
         #self.schedule.get_mean_flow_time()
     

@@ -9,6 +9,9 @@ import copy
 
 from operations import Operation
 
+from matplotlib import colormaps
+import matplotlib as mpl
+
 class Schedule:
     def __init__(self, operation_list: List[Operation], n_jobs: int, n_machines: int, jssp_problem: np.ndarray):
         # A schedule consists of a list of operations where each operation has a start time and a duration as, 
@@ -86,10 +89,14 @@ class Schedule:
             _description_
         """
         sum = 0
-        for operation in self.operation_list:
-            sum += operation.get_completion_time()
+        for job in range(self.n_jobs):
+            # For each job find the last operations
+            for i in range(1, len(self.operation_list)+1):
+                if job == self.operation_list[-i].job:
+                    sum += self.operation_list[-i].get_completion_time()
+                    break
         
-        self.mean_flow_time = sum/len(self.operation_list)
+        self.mean_flow_time = sum/self.n_jobs
         return self.mean_flow_time
     
     def get_flow_sum(self):
@@ -119,7 +126,7 @@ class Schedule:
             op_list.append({"Task" : "M" + str(op.machine), "start_time" : op.start, "stop_time" : op.get_completion_time(), "operation" : "O_" + str(op.job) + "," + str(op.machine)})
 
         df = pd.DataFrame(op_list)
-        fig, ax = plt.subplots(1,1, figsize=(10, 10))
+        fig, ax = plt.subplots(1,1, figsize=(50, 50))
         start_time = 0
         stop_time = df["stop_time"].max()
         n_rows = df["Task"].unique().shape[0]
@@ -143,7 +150,7 @@ class Schedule:
         ax.legend(handles=handlers, loc='center left', bbox_to_anchor=(1, 0.5))
 
         ax.set_title("Schedule Gantt Chart")
-        ax.set_yticks(np.arange(1, len(df["Task"].unique().tolist())))
+        ax.set_yticks(np.arange(1, len(df["Task"].unique().tolist())+1))
         ax.set_yticklabels(df["Task"].unique().tolist())
 
         ax.set_xticks(np.arange(0, stop_time).tolist())
@@ -151,3 +158,38 @@ class Schedule:
         ax.imshow(image)
         #plt.rcParams['axes.autolimit_mode'] = 'round_numbers'
         plt.show()
+
+    def get_image(self, height=400, width=1000):
+        max_time = self.max_completion_time
+        if width <= max_time:
+            width = max_time
+
+        cur_image = np.ones((height, int(width), 3))
+        
+        for operation in self.operation_list:
+            cur_image[int(np.floor(operation.machine*height/self.n_machines)) : int((operation.machine + 1)*height/self.n_machines), 
+                      int(operation.start*width/max_time) : int(operation.get_completion_time()*width/max_time), 
+                      :] = plt.cm.gist_rainbow(operation.job/self.n_jobs)[:3]
+        
+        return cur_image
+
+    def plot_gnatt_img(self, height=400, width=1000, display=True, axis=None):
+        max_time = self.max_completion_time
+        if width <= max_time:
+            width = max_time
+
+        cur_image = self.get_image(height)
+
+        if axis == None:
+            fig, axis = plt.subplots(1, 1)#, figsize=(10, 10))
+
+        img1 = axis.imshow(cur_image)
+        axis.set_xticks(np.linspace(-0.5, width, 5))
+        axis.set_xticklabels(np.linspace(0, max_time+1, 5))
+
+        axis.set_yticks(np.linspace(0, height, self.n_machines))
+        axis.set_yticklabels([f"M{i+1}" for i in range(self.n_machines)])
+        if display:
+            plt.show()
+
+        return img1

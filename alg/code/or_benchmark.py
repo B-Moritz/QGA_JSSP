@@ -94,7 +94,7 @@ class BenchmarkCollection:
             # Parse number of machines
             cur_n_machines = int(m_j_def[1])
             # Define the benchmark matrix of shape (2, j, m) where index 0 contains the machine order for each job and 1 contains the duration of the operation
-            prob_matrix = np.empty((2, int(cur_n_jobs), int(cur_n_machines)))
+            prob_matrix = np.empty((2, int(cur_n_jobs), int(cur_n_machines)), dtype=int)
 
             for job_seq in range(2, len(cur_problem_str)):
                 # For each job, extract the string of machine and duration
@@ -125,7 +125,7 @@ class BenchmarkCollection:
             print("\n+++++++++++++++++++++++++++++\n\n")
 
 if __name__=="__main__":
-    test_benchmark_collection = BenchmarkCollection(make_web_request=False)
+    test_benchmark_collection = BenchmarkCollection(make_web_request=True)
     test_benchmark_collection.print_benchmarks()
 
     
