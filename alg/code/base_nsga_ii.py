@@ -14,8 +14,9 @@ from schedules import Schedule
 from individual import Individual
 from or_benchmark import BenchmarkCollection
 import matplotlib.pyplot as plt
-
+from PIL import Image
 from typing import List
+import threading
 
 class Population:
     # Consists of the parent and ofspring population P_t and Q_t to form the full population R_t
@@ -176,7 +177,6 @@ class Population:
         cur_genotype[second_index_converted] = first_job_num
         return cur_genotype
 
-
     def non_dominated_sorting(self):
         # Sort the entire population
         self.front_start_index: List = [] # Contains start index for each front
@@ -187,7 +187,7 @@ class Population:
                 # For each individual go through the rest to find the best posible individual (that dominates all solutions)
                 dominated = False
                 for j in range(cur_start, len(self.R)):
-                    # swap if J dominates the 
+                    # swap if J dominates the
                     if (i != j) and (np.array(self.R[j].cur_fitness) <= np.array(self.R[i].cur_fitness)).all():
                         # Break the loop if the individual i is dominated -> means that the individual does not belong to the current front
                         dominated = True
@@ -229,7 +229,7 @@ class Population:
             Array containing the metrics: makespan [min, avg], mean flow time [min, avg], spread
         """
         cur_range = self.get_front_range(0)
-        result = {"Makespan": {"Avg" : 0, "Min": np.inf,}, "Mean flow time": {"Avg" : 0, "Min": np.inf}, "Spread" : np.inf}
+        result = {"Makespan": {"Avg" : 0, "Min": np.inf,}, "Mean flow time": {"Avg" : 0, "Min": np.inf}, "Spread" : np.inf, "n_fronts" : len(self.front_start_index)}
         for i in range(cur_range[1]):
             result["Makespan"]["Avg"] += self.R[i].schedule.max_completion_time
             if result["Makespan"]["Min"] > self.R[i].schedule.max_completion_time:
@@ -304,64 +304,88 @@ class Population:
                 
         return [point_list, color_list]
 
-def nsga2(n_jobs, n_machines, jssp_problem, n_iterations, gui=False):
-    # Initialize the population - This populates the population with randomly generated individuals
-    pop_object = Population(
-                N=20, 
+
+class Moop_alg:
+
+    def __init__(self, n_iterations, n_jobs, n_machines, jssp_problem):
+        self.n_iterations = n_iterations
+
+        # Initialize the population - This populates the population with randomly generated individuals
+        self.pop_object = Population(
+                N=40, 
                 decoding_method = "apply_operation_based_bierwirth", 
                 n_jobs = n_jobs, 
                 n_machines = n_machines, 
                 jssp_problem = jssp_problem,
                 activate_schedule = True,
                 objectives = ["max_completion_time", "mean_flow_time"])
-    
-    if gui:
+
+    def visualize_results(self):
         plt.ion()
         fig = plt.figure(1, figsize=(15, 10))
         plt.clf()
         ax1 = fig.add_subplot(1, 2, 2)
         ax2 = fig.add_subplot(1, 2, 1)
-    pop_object.evaluate_fitness()
-    pop_object.non_dominated_sorting()
-    pop_object.crowding_distance_sort_all_fronts()
 
-    if gui:
-        cur_img = pop_object.R[0].schedule.plot_gnatt_img(height=500, display=False, axis=ax1)
-        point_list, color_list = pop_object.plot_fronts()
+        cur_img = self.pop_object.R[0].schedule.plot_gnatt_img(height=500, display=False, axis=ax1)
+        point_list, color_list = self.pop_object.plot_fronts()
         cur_scatter = ax2.scatter(point_list[:, 0], point_list[:, 1], c=color_list)
+        ax2.set_xticks(np.linspace(0, np.max(point_list[:, 0]), 10))
+        ax2.set_yticks(np.linspace(0, np.max(point_list[:, 1]), 10))
 
-    for i in range(1, n_iterations, 1):
-        # higher tournament size -> more elitism, smaller torunament size -> less elitism
-        pop_object.select_parents(2, 20)
-        pop_object.execute_recombination()
-
-        # Make fitness evaluaiton
-        pop_object.evaluate_fitness()
-        pop_object.non_dominated_sorting()
-        pop_object.crowding_distance_sort_all_fronts()
-        cur_result = pop_object.get_performance()
-        print(f"{i} : Makespan: [min : {cur_result['Makespan']['Min']:.2f}, avg : {cur_result['Makespan']['Avg']:.2f}], " + \
-              f"Mean flow time: [min : {cur_result['Mean flow time']['Min']:.2f}, avg : {cur_result['Mean flow time']['Avg']:.2f}]")
-        
-        if gui:
-            cur_img.set_data(pop_object.R[0].schedule.get_image(height=500))
-            point_list, color_list = pop_object.plot_fronts()
-            #ax2.clear()
+        while self.n_iterations > 0:
+            cur_img.set_data(self.pop_object.R[0].schedule.get_image(height=500))
+            point_list, color_list = self.pop_object.plot_fronts()
+            
             cur_scatter.set_offsets(point_list)
             cur_scatter.set_color(color_list)
             #ax2.scatter(point_list[:, 0], point_list[:, 1], c=color_list)
             plt.pause(0.01)
 
-    # Plot gnatt for one of the solutions
-    #pop_object.R[0].schedule.plot_gnatt_img()
+
+    def nsga2(self, show_gui=False):
+        self.pop_object.evaluate_fitness()
+        self.pop_object.non_dominated_sorting()
+        self.pop_object.crowding_distance_sort_all_fronts()
+        max_iteration = self.n_iterations
+        while self.n_iterations > 0:
+            # higher tournament size -> more elitism, smaller torunament size -> less elitism
+            self.pop_object.select_parents(2, 20)
+            self.pop_object.execute_recombination()
+
+            # Make fitness evaluaiton
+            self.pop_object.evaluate_fitness()
+            self.pop_object.non_dominated_sorting()
+            self.pop_object.crowding_distance_sort_all_fronts()
+            cur_result = self.pop_object.get_performance()
+            i = max_iteration - self.n_iterations
+            print(f"{i} : Makespan: [min : {cur_result['Makespan']['Min']:.2f}, avg : {cur_result['Makespan']['Avg']:.2f}], " + \
+                f"Mean flow time: [min : {cur_result['Mean flow time']['Min']:.2f}, avg : {cur_result['Mean flow time']['Avg']:.2f}], n_fronts: {cur_result['n_fronts']}")
+        
+            self.n_iterations -= 1
+
+
+        # Save the schedules of the pareto front in the 
+        cur_pareto_front = self.pop_object.get_front_range(0)
+        for i in range(cur_pareto_front[0], cur_pareto_front[1], 1):
+            cur_img = self.pop_object.R[i].schedule.get_image()
+            #cur_img = np.transpose(cur_img, (2, 0, 1))
+            im = Image.fromarray(np.uint8(cur_img*255)).convert('RGB')
+            im.save(f"test_{i}.png")
+
+        # Plot gnatt for one of the solutions
+        #pop_object.R[0].schedule.plot_gnatt_img()
 
 
 if __name__=="__main__":
+    problem_name = 'ft06'
     test_benchmark_collection = BenchmarkCollection(make_web_request=False)
-    test_benchmark_collection.benchmark_collection['ft06']['problem_matrix']
-    n_machines = test_benchmark_collection.benchmark_collection['ft06']['n_machines']
-    n_jobs = test_benchmark_collection.benchmark_collection['ft06']['n_jobs']
-    jssp_problem = test_benchmark_collection.benchmark_collection['ft06']['problem_matrix']
-    n_iterations = 100
+    test_benchmark_collection.benchmark_collection[problem_name]['problem_matrix']
+    n_machines = test_benchmark_collection.benchmark_collection[problem_name]['n_machines']
+    n_jobs = test_benchmark_collection.benchmark_collection[problem_name]['n_jobs']
+    jssp_problem = test_benchmark_collection.benchmark_collection[problem_name]['problem_matrix']
+    n_iterations = 1000
 
-    nsga2(n_jobs, n_machines, jssp_problem, n_iterations)
+    optim = Moop_alg(n_iterations, n_jobs, n_machines, jssp_problem)
+    optim.nsga2(show_gui=True)
+    

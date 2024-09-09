@@ -31,34 +31,41 @@ class Schedule:
         # Initiating the timing lists for machine and job
         m_time = np.zeros(self.n_machines)
         j_time = np.zeros(self.n_jobs)
-        T_counter = np.zeros(self.n_jobs)
+        T_counter = np.zeros(self.n_jobs, dtype=int)
+        
+
         while len(semi_active_schedule) > 0:
             # Need to find the operation with the lowest completion time among the set of scheduable operations
+            cur_schedulable_index = []
             cur_best_index_k = 0
             cur_lowest_complete_time = 0
             # Extract the start and comlpetion time for the first operation in the list
-            lowest_start_time_i  = np.max([m_time[semi_active_schedule[0].machine], j_time[semi_active_schedule[0].job]])
-            cur_lowest_complete_time = lowest_start_time_i + semi_active_schedule[0].duration
+            #lowest_start_time_i  = np.max([m_time[semi_active_schedule[0].machine], j_time[semi_active_schedule[0].job]])
+            cur_lowest_complete_time = np.inf#lowest_start_time_i + semi_active_schedule[0].duration
 
             # Loop to find the lowest completion time
-            for i in range(1, len(semi_active_schedule)):
+            for i in range(0, len(semi_active_schedule)):
                 # For each operation, find the lowest start time and the completion time
-                lowest_start_time_i  = np.max([m_time[semi_active_schedule[i].machine], j_time[semi_active_schedule[i].job]])
-                completion_i = lowest_start_time_i + semi_active_schedule[i].duration
-                
-                if completion_i < cur_lowest_complete_time:
-                    # Update the lowest completion time if it is lower than the current lowest
-                    cur_lowest_complete_time = completion_i
-                    # store the index of the operation
-                    cur_best_index_k = i
+                cur_next_machine = self.jssp_problem[0][semi_active_schedule[i].job][T_counter[semi_active_schedule[i].job]]
+                if cur_next_machine == semi_active_schedule[i].machine:
+                    cur_schedulable_index.append(i)
+                    lowest_start_time_i  = np.max([m_time[semi_active_schedule[i].machine], j_time[semi_active_schedule[i].job]])
+                    completion_i = lowest_start_time_i + semi_active_schedule[i].duration
+                    
+                    if completion_i < cur_lowest_complete_time:
+                        # Update the lowest completion time if it is lower than the current lowest
+                        cur_lowest_complete_time = completion_i
+                        # store the index of the operation
+                        cur_best_index_k = i
 
-
+            # The lowest completion time
             found_lowest_completion_time = cur_lowest_complete_time
+            # The machine number of the selected operation
             machine_k = semi_active_schedule[cur_best_index_k].machine
 
             overall_best_index = 0
             overall_lowest_start_time = np.inf #np.max([m_time[semi_active_schedule[overall_best_index].machine], j_time[semi_active_schedule[overall_best_index].job]])
-            for operation_index in range(0, len(semi_active_schedule)):
+            for operation_index in cur_schedulable_index:
                 if semi_active_schedule[operation_index].machine == machine_k:
                     # If the current operation is for machine_k, find the lowest starting time 
                     lowest_start_time_i  = np.max([m_time[semi_active_schedule[operation_index].machine], j_time[semi_active_schedule[operation_index].job]])
