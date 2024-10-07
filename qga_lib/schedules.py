@@ -87,7 +87,7 @@ class Schedule:
         self.activated = True
         self.operation_list = active_schedule
 
-    def get_mean_flow_time(self):
+    def get_mean_flow_time(self) -> float:
         """Calculate the mean completion time. This objective should be minimized 
 
         Returns
@@ -115,7 +115,7 @@ class Schedule:
         return self.flow_sum
     
 
-    def get_makespan(self):
+    def get_makespan(self) -> int:
         # Find the highest completion time among the operations in the schedule
         cur_max_completion_time = self.operation_list[0].get_completion_time()
         for i in range(1, len(self.operation_list)):

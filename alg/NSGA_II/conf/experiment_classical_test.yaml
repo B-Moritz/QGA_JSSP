@@ -1,0 +1,21 @@
+experiment:
+    repetitions: 1
+    n_iterations: 10
+    problem_names: ['ft06', 'ft10', 'ft20', 'abz7', 'abz8', 'abz9']
+    log_path: "..\\..\\logdata\\Experiment"
+    experiment_id: 1
+    dump_population: True
+
+classical:
+    _target_: base_nsga_ii.ClassicalNSGAII
+    _partial_: True
+    activate_logging: True
+    pop_object:
+        _target_: base_nsga_ii.ClassicalPopulation
+        N: 50
+        decoding_method: "apply_operation_based_bierwirth"
+        activate_schedule: True
+        tournament_size: 2
+        mating_pool_size: 50
+        mutation_probability: 0.25
+    
