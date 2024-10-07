@@ -1,0 +1,6 @@
+['remote "googleremote"']
+    url = gdrive://1-esQqP2h-1jSk42L-Gy2L_6TWOKmXShM
+    gdrive_client_id = 37204716459-2t8mdcqsfun4ua3aoajfu5na2qudfbsk.apps.googleusercontent.com
+    gdrive_client_secret = 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
+    gdrive_use_service_account = true
+    gdrive_acknowledge_abuse = true
