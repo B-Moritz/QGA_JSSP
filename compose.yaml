@@ -1,4 +1,6 @@
 services:
-  server:
+  qga_jssp:
     build:
       context: .
+    volumes:
+      - ./logdata:/app/logdata
