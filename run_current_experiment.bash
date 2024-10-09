@@ -2,4 +2,4 @@
 
 ls /app/logdata
 
-python ./alg/NSGA_II/run_experiment.py -cn experiment_qga_test.yaml
+python ./alg/NSGA_II/run_experiment.py -cn experiment_qga_position.yaml

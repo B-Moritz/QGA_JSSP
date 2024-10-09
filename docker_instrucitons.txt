@@ -1,3 +1,7 @@
+
+1. clone repository
+2. install dvc
+
 dvc remote add -d -f googleremote gdrive://1-esQqP2h-1jSk42L-Gy2L_6TWOKmXShM
 dvc remote modify googleremote gdrive_acknowledge_abuse true
 dvc remote modify googleremote gdrive_use_service_account true

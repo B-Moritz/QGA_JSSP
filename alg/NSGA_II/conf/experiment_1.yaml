@@ -2,9 +2,9 @@ experiment:
     repetitions: 10
     n_iterations: 200
     problem_names: ['ft06', 'ft10', 'ft20'] #['abz5'] #, 'abz6', 'abz7', 'abz8', 'abz9', 'ft06', 'ft10', 'ft20']
-    log_path: "..\\..\\logdata\\Experiment"
+    log_path: ["..", "..", "logdata", "Experiment"]
     experiment_id: 1
-    dump_population: True
+    dump_population: False
 
 classical:
     _target_: base_nsga_ii.ClassicalNSGAII
