@@ -32,7 +32,7 @@ quantum_base_encoding:
         decoding_method: "apply_operation_based_bierwirth"
         individual_type: QChromosomeBaseEncoding
         time_log: False
-        rotation_angles: "[0.2*np.pi, 0, 0.5*np.pi, 0, 0.5*np.pi, 0, 0.2*np.pi, 0]"
+        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
         group_partitions: 10
         individual_cfg:     
 
@@ -49,7 +49,7 @@ quantum_position_encoding:
         decoding_method: "apply_operation_based_bierwirth"
         individual_type: QChromosomePositionEncoding
         time_log: False
-        rotation_angles: "[0.2*np.pi, 0, 0.5*np.pi, 0, 0.5*np.pi, 0, 0.2*np.pi, 0]"
+        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
         group_partitions: 10
         individual_cfg: 
             restrict_permutation: False   
@@ -67,7 +67,7 @@ quantum_position_encoding_restricted:
         decoding_method: "apply_operation_based_bierwirth"
         individual_type: QChromosomePositionEncoding
         time_log: False
-        rotation_angles: "[0.2*np.pi, 0, 0.5*np.pi, 0, 0.5*np.pi, 0, 0.2*np.pi, 0]"
+        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
         group_partitions: 10
         individual_cfg: 
             restrict_permutation: True   
@@ -85,7 +85,7 @@ quantum_hash_base_encoding:
         decoding_method: "apply_operation_based_bierwirth"
         individual_type: QChromosomeHashBaseEncoding
         time_log: False
-        rotation_angles: "[0.2*np.pi, 0, 0.5*np.pi, 0, 0.5*np.pi, 0, 0.2*np.pi, 0]"
+        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
         group_partitions: 10
         individual_cfg:   
 
@@ -102,6 +102,6 @@ quantum_hash_reduced_encoding:
         decoding_method: "apply_operation_based_bierwirth"
         individual_type: QChromosomeHashReducedEncoding
         time_log: False
-        rotation_angles: "[0.2*np.pi, 0, 0.5*np.pi, 0, 0.5*np.pi, 0, 0.2*np.pi, 0]"
+        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
         group_partitions: 10
         individual_cfg:  

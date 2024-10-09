@@ -34,9 +34,10 @@ RUN adduser \
 # Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
 # Leverage a bind mount to requirements.txt to avoid having to copy them into
 # into this layer.
+# Note that this install ignores packages that failed to be installed
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt
+    while read p; do pip install "$p"; done <requirements.txt
 
 # Switch to the non-privileged user to run the application.
 USER qmea
@@ -44,9 +45,14 @@ USER qmea
 # Copy the source code into the container.
 COPY . .
 
-RUN chmod 700 run_current_experiment.bash
+#RUN sudo chmod 700 run_current_experiment.bash
 # Expose the port that the application listens on.
 #EXPOSE 8000
+USER root
+RUN python install.py
+RUN chown -R qmea /app
+#RUN echo "/app/qga_lib" > /usr/local/lib/python3.9/site-packages/qga_lib.pth
+USER qmea
 
 # Run the application.
 CMD ./run_current_experiment.bash
