@@ -1,0 +1,25 @@
+experiment:
+    repetitions: 10
+    n_iterations: 200
+    problem_names: ['ft06', 'ft10', 'ft20'] #['abz5'] #, 'abz6', 'abz7', 'abz8', 'abz9', 'ft06', 'ft10', 'ft20']
+    log_path: ["..", "..", "logdata", "Experiment"]
+    experiment_id: 1
+    dump_population: False
+
+
+quantum_hash_base_encoding: 
+    _target_: qmea.QMEA
+    _partial_: True
+    activate_logging: True
+    pop_object:
+        _target_: qmea.QMEAPopulation
+        N: 50
+        reset_fraction: 0.25 # Clip the bottom quarter -> reset chromosomes back to 50/50
+        activate_schedule: True
+        decoding_method: "apply_operation_based_bierwirth"
+        individual_type: QChromosomeHashBaseEncoding
+        time_log: False
+        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
+        group_partitions: 10
+        individual_cfg:   
+
