@@ -12,7 +12,7 @@ quantum_position_encoding:
     activate_logging: True
     pop_object:
         _target_: qmea.QMEAPopulation
-        N: 50
+        N: 100
         reset_fraction: 0.25 # Clip the bottom quarter -> reset chromosomes back to 50/50
         activate_schedule: True
         decoding_method: "apply_operation_based_bierwirth"
