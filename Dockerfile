@@ -55,4 +55,5 @@ RUN chown -R qmea /app
 USER qmea
 
 # Run the application.
+WORKDIR /app/QGA_JSSP
 CMD ./run_current_experiment.bash
