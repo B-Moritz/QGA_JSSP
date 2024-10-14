@@ -20,6 +20,7 @@ def run_experiment(cfg: DictConfig):
 
     # Create log folder
     par_dir = os.path.dirname(str(__file__))
+    print(par_dir)
     cur_timestamp = str(datetime.datetime.today()).replace(' ', '_').replace(".", "_").replace(":", "_")
     logdata_path = os.path.join(*cfg.experiment.log_path)
     log_path = os.path.join(par_dir, logdata_path + f"_{cfg.experiment.experiment_id}_{cur_timestamp}")

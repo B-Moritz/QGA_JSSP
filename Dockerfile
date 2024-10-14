@@ -16,7 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
-WORKDIR /app
+WORKDIR QGA_JSSP
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
@@ -50,10 +50,9 @@ COPY . .
 #EXPOSE 8000
 USER root
 RUN python install.py
-RUN chown -R qmea /app
+RUN chown -R qmea /QGA_JSSP
 #RUN echo "/app/qga_lib" > /usr/local/lib/python3.9/site-packages/qga_lib.pth
 USER qmea
 
 # Run the application.
-WORKDIR /app/QGA_JSSP
 CMD ./run_current_experiment.bash
