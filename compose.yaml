@@ -4,3 +4,14 @@ services:
       context: .
     volumes:
       - ./logdata:/QGA_JSSP/logdata
+    cpuset: "0"
+    command: ./run_classical_experiment.bash
+
+  classical_jssp:
+    qga_jssp:
+    build:
+      context: .
+    volumes:
+      - ./logdata:/QGA_JSSP/logdata
+    cpuset: "1"
+    command: ./run_position_experiment.bash
