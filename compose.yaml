@@ -1,5 +1,5 @@
 services:
-  qga_jssp:
+  classical_jssp:
     build:
       context: .
     volumes:
@@ -7,8 +7,7 @@ services:
     cpuset: "0"
     command: ./run_classical_experiment.bash
 
-  classical_jssp:
-    qga_jssp:
+  qga_jssp:
     build:
       context: .
     volumes:
