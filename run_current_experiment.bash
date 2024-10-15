@@ -2,7 +2,7 @@
 
 ls /app/logdata
 
-python ./alg/NSGA_II/run_experiment.py -cn experiment_qga_position.yaml
+#python ./alg/NSGA_II/run_experiment.py -cn experiment_qga_position.yaml
 
 for pop_size in 150 200 250
 do
