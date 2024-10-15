@@ -3,4 +3,4 @@ services:
     build:
       context: .
     volumes:
-      - ./logdata:/app/logdata
+      - ./logdata:/QGA_JSSP/logdata
