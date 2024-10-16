@@ -1,7 +1,7 @@
 experiment:
     repetitions: 10
     n_iterations: 200
-    problem_names: ['ft06', 'ft10', 'ft20']   #, 'abz7', 'abz8', 'abz9']
+    problem_names: ['ft20'] #['ft06', 'ft10', 'ft20']   #, 'abz7', 'abz8', 'abz9']
     log_path: ["..", "..", "logdata", "Experiment"]
     experiment_id: 1
     dump_population: False

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ls /QGA_JSSP/logdata
+ls -la /QGA_JSSP/logdata
 
 #python ./alg/NSGA_II/run_experiment.py -cn experiment_qga_position.yaml
 

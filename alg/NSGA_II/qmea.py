@@ -20,6 +20,8 @@ class QMEA(JsspAlgorithm):
 
 
     def execute(self):
+        """This generator function constitutes the body of the algorithm main loop for the QMEA.
+        """
         # sort the population
         self.pop_object.non_dominated_sorting()
         self.pop_object.crowding_distance_sort_all_fronts()

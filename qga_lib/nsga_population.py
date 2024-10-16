@@ -554,10 +554,17 @@ class QMEAPopulation(Population):
             self.R[i] = cur_individual_type(self.n_jobs, self.n_machines, self.Individual_cfg, time_log=time_log)
 
     def execute_quantum_update(self):
+        """This method is used to perform recombination for the QMEA algorithm
+
+        Raises
+        ------
+        Exception
+            The groups of solutions should contains more solutions than 0.
+        """
         # Divide the parents into equal groups
         S = int(np.floor(self.N/self.group_partitions))
         if S <= 0:
-            raise Exception("The groups of solutions should contains more solution than 0. Please adjust the n_groups parameter.")
+            raise Exception("The groups of solutions should contains more solutions than 0. Please adjust the n_groups parameter.")
         
         group = np.arange(1, self.group_partitions, 1)*S
         for g in group:
