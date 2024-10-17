@@ -12,6 +12,8 @@ from omegaconf import DictConfig
 from typing import List
 
 import pdb
+
+
 # Decorator function for measuring the execution time used by the method in question. 
 # Results are added in the timer_result attribute of the class
 def measure_runtume(method_name: str):
@@ -22,7 +24,9 @@ def measure_runtume(method_name: str):
                 raise Exception("Please make sure that methods decorated with @measure_runtime is caled with self!")
             
             if args[0].time_log:
+                # Start timer
                 start_time = time.time()
+                # Actual funciton call
                 temp_return = func(*args, **kwargs)
                 if method_name in args[0].timer_result.keys():
                     args[0].timer_result[method_name] += time.time() - start_time
@@ -34,6 +38,8 @@ def measure_runtume(method_name: str):
             return temp_return
         return wrapper
     return decorator_measure_runtime
+
+
 
 class Individual:
 
@@ -135,7 +141,7 @@ class QChromosome(Individual):
             The measured bit string. Shape: n_machines, n_bits
         """
         cur_needles = np.random.uniform(0, 1, self.binary_chromosome.shape[1:])
-        self.x = (self.binary_chromosome[0, :, :]**2 > cur_needles).astype(bool) # Note that x adopts the shape of the binary_chromosome except the amplitudes: machine numbers, n_bits
+        self.x = (self.binary_chromosome[0, :, :]**2 < cur_needles).astype(bool) # Note that x adopts the shape of the binary_chromosome except the amplitudes: machine numbers, n_bits
         return self.x
     
     def convert_bin_to_decimal(self, bin_array: np.ndarray) -> np.ndarray:
@@ -334,7 +340,7 @@ class QChromosomePositionEncoding(QChromosomeBaseEncoding):
         return self.permutation
     
 
-class QChromosomeHashBaseEncoding(QChromosome):
+class QChromosomeHashReducedEncoding(QChromosome):
     """This class consistutes the base for the hash method as decoding from binary to permutations. 
     The base class uses the method of splitting the problem into finding the job sequence for each 
     machine. Number of bits are m*j*(log_2(j-1)+1), which leads to redundency.
@@ -428,7 +434,7 @@ class QChromosomeHashBaseEncoding(QChromosome):
         return result
 
     
-class QChromosomeHashReducedEncoding(QChromosome):
+class QChromosomeHashBaseEncoding(QChromosome):
     """This class reduces the search space for the bit string by estimating the number of bits more accurately.
     Each bit string maps to a permutation of 
 
@@ -652,11 +658,11 @@ if __name__=="__main__":
     print(f"Time chromo_restricted: {time.time()-start:.4f}")
     
     start = time.time()
-    test_chromo_hash = QChromosomeHashBaseEncoding(j, m, time_log=True)
+    test_chromo_hash = QChromosomeHashReducedEncoding(j, m, time_log=True)
     print(f"Time chromo_hash: {time.time()-start:.4f}")
     
     start = time.time()
-    test_chromo_hash_II = QChromosomeHashReducedEncoding(j, m, time_log=True)
+    test_chromo_hash_II = QChromosomeHashBaseEncoding(j, m, time_log=True)
     print(f"Time chromo_hash_II: {time.time()-start:.4f}")
 
 

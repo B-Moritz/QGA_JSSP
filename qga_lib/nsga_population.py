@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from typing import List
 
-from individual import Individual, QChromosomeBaseEncoding, QChromosomePositionEncoding, QChromosomeHashBaseEncoding, QChromosomeHashReducedEncoding
+from individual import Individual, QChromosomeBaseEncoding, QChromosomePositionEncoding, QChromosomeHashReducedEncoding, QChromosomeHashBaseEncoding
 import datetime
 
 class Population:
@@ -573,10 +573,11 @@ class QMEAPopulation(Population):
                 # Solutions in other groups are given by S*group + s
                 self.R[g + s].rotate(self.R[s], self.rotation_angles)
 
+        # Reset remaining solutions
         for remaining in self.R[int(self.N*2*(1-self.reset_fraction)):]:
             remaining.reset_chromosome()
 
         # Set the amplitudes of the best group
         for s in range(S):
-            self.R[s].binary_chromosome[0, :, :] = self.R[s].x
-            self.R[s].binary_chromosome[1, :, :] = np.logical_not(self.R[s].x)
+            self.R[s].binary_chromosome[0, :, :] = np.logical_not(self.R[s].x)
+            self.R[s].binary_chromosome[1, :, :] = self.R[s].x
