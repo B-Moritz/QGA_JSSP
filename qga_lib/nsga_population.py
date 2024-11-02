@@ -579,5 +579,5 @@ class QMEAPopulation(Population):
 
         # Set the amplitudes of the best group
         for s in range(S):
-            self.R[s].binary_chromosome[0, :, :] = np.logical_not(self.R[s].x)
-            self.R[s].binary_chromosome[1, :, :] = self.R[s].x
+            self.R[s].binary_chromosome[0, ...] = np.logical_not(self.R[s].x)
+            self.R[s].binary_chromosome[1, ...] = self.R[s].x
