@@ -3,6 +3,8 @@
 
     References:
         * Ripon, K. S. N., Tsang, C.-H., & Kwong, S. (2007). An Evolutionary Approach for Solving the Multi-Objective Job-Shop Scheduling Problem. In Studies in Computational Intelligence (Vol. 49, pp. 165–195). https://doi.org/10.1007/978-3-540-48584-1_7
+        * Deb, K., Pratap, A., Agarwal, S., & Meyarivan, T. (2002). A fast and elitist multiobjective genetic algorithm: NSGA-II. IEEE Transactions on Evolutionary Computation, 6(2), 182–197. IEEE Transactions on Evolutionary Computation. https://doi.org/10.1109/4235.996017
+
 
     """
 
@@ -172,35 +174,54 @@ class Population:
         return result
 
     def calculate_spread_euclidian(self):
-        if len(self.crowding_distance_data) < 2:
+        """This method calculates the spread metric proposed by (Deb et al., 2002)
+
+        uses the crowding_distance_data attribute
+            
+        Returns
+        -------
+        float
+            The spread value for the current Pareto-front
+        """
+        #if len(self.crowding_distance_data) < 2:
             # If there is only one solution that is non-dominated, 
             # return infinity to emphazise the need for more than 
             # one solutions in the converged front
-            return np.inf
+        #    return np.inf
         
-        d_extreme = (self.crowding_distance_data["makespan"].max() - self.crowding_distance_data["makespan"].min())**2
-        d_extreme += (self.crowding_distance_data["mean flow time"].max() - self.crowding_distance_data["mean flow time"].min())**2
-        d_extreme = np.sqrt(d_extreme)
+        #d_extreme = (self.crowding_distance_data["makespan"].max() - self.crowding_distance_data["makespan"].min())**2
+        #d_extreme += (self.crowding_distance_data["mean flow time"].max() - self.crowding_distance_data["mean flow time"].min())**2
+        
+        # First the distance between the extreme solutions in the estimated pareto-front Q and the optimal Pareto-Front
+        # Note that the optimal pareto front is not known in this case and the extremes are set to 0 for both objectives.
+        # As a result the distance is the minimum value for the metrics. 
+        # If d_extreme -> 0, we now that the pareto fron covers the optimal front in bredth
+        d_extreme = self.crowding_distance_data["makespan"].min() + self.crowding_distance_data["mean flow time"].min() #np.sqrt(d_extreme)
+        # Initializing the total distance value
         di_sum = 0
-        di_list = []
+        # List of distances
+        di_list = np.empty(len(self.crowding_distance_data)-1)
         counter = 0
-        for i in range(len(self.crowding_distance_data)):
-            for j in range(i+1, len(self.crowding_distance_data)):
-                di = (self.crowding_distance_data["makespan"][i] - self.crowding_distance_data["makespan"][j])**2
-                di += (self.crowding_distance_data["mean flow time"][i] - self.crowding_distance_data["mean flow time"][j])**2
-                di = np.sqrt(di)
-                di_list.append(di)
-                di_sum += di
-                counter += 1
-
-        d_mean = di_sum/counter
-        di_mean_sum = np.sum(np.abs(np.array(di_list) - d_mean))
-        denominator = (d_extreme + len(self.crowding_distance_data)*d_mean)
-        if denominator == 0:
-            return np.inf
         
+        # Now each successive distance between solutions in the non-dominated set is found
+        self.crowding_distance_data["makespan"].sort()
+        for i in range(1, len(self.crowding_distance_data)):
+            # For each solution in the pareto front
+            di = (self.crowding_distance_data["makespan"][i] - self.crowding_distance_data["makespan"][i-1])**2
+            di += (self.crowding_distance_data["mean flow time"][i] - self.crowding_distance_data["mean flow time"][i-1])**2
+            di = np.sqrt(di)
+            di_list[i-1] = di
+            di_sum += di
+            counter += 1
+
+        # Find the mean distance
+        d_mean = di_sum/counter
+        # Find the deviation from the mean. If the deviaiton -> 0, then the solutions are equally spaced between each other
+        di_mean_sum = np.sum(np.abs(di_list - d_mean))
+        denominator = (d_extreme + len(di_list)*d_mean)
         # Return the calculated spread
-        return  (d_extreme + di_mean_sum)/denominator
+        S = (d_extreme + di_mean_sum)/denominator
+        return  S
 
     def calculate_spread_cd(self):
         # Measure of how diverse the pareto front is.
