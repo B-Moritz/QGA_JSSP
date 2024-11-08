@@ -489,7 +489,7 @@ class QChromosomeHashBaseEncoding(QChromosome):
     @measure_runtume("Find position")
     def find_position(self, i, n, r):
         # This function is called with the position number, the number of objects to fraw from and the number of objects to draw
-        # The function should based on position number find the first value for r and return it
+        # The function should, based on position number, find the first value for r and return it
         # Starting with the first position and adding all possible positions in a loop
         # Base case:
         if r == 1:
@@ -555,6 +555,8 @@ class QChromosomeHashBaseEncoding(QChromosome):
         m : int
             number of machines
         """
+        # Initialize the array where the permutation is stored.
+        # Note that the array elements are initialized with -1 to indicate that it contains no valid machine number.
         final_result = np.ones(m*j, dtype=int)*-1
         for k in range(j):
             # For each job
@@ -563,16 +565,17 @@ class QChromosomeHashBaseEncoding(QChromosome):
                 # Add the last job number in the remaining spaces
                 final_result[final_result == -1] = k
             else:
-                cur_count = int(decimal.Decimal(math.factorial(cur_max))/decimal.Decimal((math.factorial(m))**(j-k-1)))
-                
-                cur_period_number = int(perm_number / cur_count)
-                perm_number = int(perm_number) % cur_count
+                # Number of possible permutations is calculated by
+                n_permutations = int(decimal.Decimal(math.factorial(cur_max))/decimal.Decimal((math.factorial(m))**(j-k-1)))
+                # Find the number of times the number of permutations with j-1 goes in the permutations number
+                cur_period_number = int(perm_number / n_permutations)
+                # Find the new permutation number by finding the rest
+                perm_number = int(perm_number) % n_permutations
 
-                # Old method for finding combination
-                #temp_comb = self.combinations(range(m*(j-k)), m, cur_period_number)
-                # New method:
+                # Place the m elements of value j in the array.
+                # This is done by finding the k-combination of an n-size integer set.
                 temp_comb = self.get_combination(m*(j-k), m, cur_period_number)
-                # Add the job numbers into the permutation array
+                # Add the job numbers into the result array according to the combination created of index values
                 temp_final_result = final_result[final_result == -1]
                 temp_final_result[temp_comb] = k
                 #for i in temp_comb:

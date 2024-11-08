@@ -15,7 +15,7 @@ from omegaconf import DictConfig
 from operations import Operation
 from schedules import Schedule
 from individual import Individual, PermutationChromosome
-from nsga_population import ClassicalPopulation
+from nsga_population import Population, ClassicalPopulation
 
 from or_benchmark import BenchmarkCollection
 import matplotlib.pyplot as plt
@@ -39,14 +39,33 @@ class JsspAlgorithm:
             f"Mean flow time: [min : {cur_result['Mean flow time']['Min']:.2f}, avg : {cur_result['Mean flow time']['Avg']:.2f}], " + \
                 f"Spread : {cur_result['Spread']}, n_fronts: {cur_result['n_fronts']}, n_non_dominated_solutions: {cur_result['n_non_dominated_solutions']}")
     
-    def dump_population(self, log_path, file_name):
-        dump_folder = os.path.join(log_path, f"population_dumps")
+    def dump_population(self, dump_folder, file_name):
+        # Dumps the current state of the population to the population dumps folder under the log folder
+
         if not os.path.exists(dump_folder):
+            # Create populaiton dump folder if it does not exist
             os.mkdir(dump_folder)
 
         cur_file_path = os.path.join(dump_folder, file_name)
         with open(cur_file_path, "wb") as cur_dump_file:
             pickle.dump(self.pop_object, cur_dump_file)
+
+    def get_population(self, dump_folder, target) -> Population:
+        """This method is used to load the population object from disk. By running the experiment with the continue flag, 
+        the algorithm execution can continue with the same population.
+
+        Parameters
+        ----------
+        dump_folder : str
+            File path to the population dump folder
+        target : str
+            Name of the file containing the population dump file            
+        """
+        cur_path = os.path.join(dump_folder, target)
+        with open(cur_path, "rb") as read_pop_dump:
+            cur_pop = pickle.load(read_pop_dump)
+        
+        self.pop_object = cur_pop
 
 
     def save_pareto_front_gnatt(self, log_path, folder_name: str):

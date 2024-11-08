@@ -69,6 +69,10 @@ def run_experiment(cfg: DictConfig):
                                                     )
                 # Convert factory wrapper to the actual class
                 candidate_obj = candidate_obj_wrapper()
+                # Load the existing population object
+                dump_folder = os.path.join(log_path, f"population_dumps")
+                if 
+                    candidate_obj.get_population()
 
                 cur_start_time = time.time()
                 for iteration_data in candidate_obj.execute():
@@ -82,13 +86,16 @@ def run_experiment(cfg: DictConfig):
 
                     if cfg.experiment.dump_population:
                         # Dump the population
-                        candidate_obj.dump_population(log_path, f"{problem_name}_{candidate}_{i}_{iteration_data['Iteration']}.pkl")
+                        candidate_obj.dump_population(dump_folder, f"{problem_name}_{candidate}_{i}_{iteration_data['Iteration']}.pkl")
 
                 # Create gnatt diagrams
                 candidate_obj.save_pareto_front_gnatt(log_path, f"{problem_name}_{candidate}_{i}")
                 # Save plot of objective space
                 candidate_obj.save_objectie_space_plot(log_path, f"Final_Objective_space_{problem_name}_{candidate}_{i}.png", f"{problem_name}_{candidate}_{i}")
 
+            # Dump the population
+            if not cfg.experiment.dump_population:
+                candidate_obj.dump_population(dump_folder, f"{problem_name}_{candidate}_{i}_{iteration_data['Iteration']}.pkl")
 
 
 if __name__=="__main__":

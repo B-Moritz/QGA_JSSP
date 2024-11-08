@@ -400,6 +400,7 @@ class ClassicalPopulation(Population):
         for i in range(len(self.R)):
             self.R[i] = PermutationChromosome.create_permutation_chromosome(self.n_jobs, self.n_machines)
 
+
     def evaluate_fitness(self):
         cur_chromosome: Individual
         for cur_chromosome in self.R:
