@@ -1,0 +1,16 @@
+services:
+  classical_jssp:
+    build:
+      context: .
+    volumes:
+      - ./logdata:/QGA_JSSP/logdata
+    cpuset: "0"
+    command: ./run_classical_experiment.bash
+
+  qga_jssp:
+    build:
+      context: .
+    volumes:
+      - ./logdata:/QGA_JSSP/logdata
+    cpuset: "1"
+    command: ./run_position_experiment.bash

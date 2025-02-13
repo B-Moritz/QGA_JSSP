@@ -1,0 +1,3 @@
+python .\alg\NSGA_II\run_experiment.py -cn experiment_1_hash_base.yaml
+
+python run_algorithm.py -cn experiment_1_hash_base.yaml

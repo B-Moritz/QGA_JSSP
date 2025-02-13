@@ -1,0 +1,28 @@
+defaults:
+ - experiment: basic
+    
+experiment:
+    repetitions: 1
+    n_iterations: 100
+    problem_names: ["ft20"] #["ft20"]
+    dump_population: True
+
+
+quantum_hash_base_encoding: 
+    _target_: qmea.QMEA
+    _partial_: True
+    activate_logging: True
+    pop_object:
+        _target_: qmea.QMEAPopulation
+        N: 200
+        reset_fraction: 0.1 # Clip the bottom % -> reset chromosomes back to 50/50
+        activate_schedule: True
+        decoding_method: "apply_operation_based_bierwirth"
+        individual_type: QChromosomeHashMultisetImprovedEncoding #QChromosomeHashMultisetEncoding
+        time_log: False
+        rotation_angles: "[0, 0, 0.11*np.pi, 0, 0.11*np.pi, 0, 0, 0]" # "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
+        group_partitions: 20 # The number of partitions in the population
+        individual_cfg:   
+            mutation_rate: 0
+            schedule_lb: 0.3
+            schedule_ub: 0.7
