@@ -207,7 +207,9 @@ class ClassicalNSGAII(JsspAlgorithm):
             self.pop_object.evaluate_fitness()
             self.pop_object.non_dominated_sorting()
             self.pop_object.crowding_distance_sort_all_fronts()
-            cur_result = self.pop_object.get_performance()
+
+            is_last_iteration = True if self.n_iterations == 1 else False
+            cur_result = self.pop_object.get_performance(is_last_iteration=is_last_iteration)
             cur_result["Iteration"] = max_iteration - self.n_iterations
             self.print_performance(cur_result)
             

@@ -1,0 +1,56 @@
+defaults:
+ - experiment: basic
+
+experiment:
+    repetitions: 10
+    n_iterations: 150
+    problem_names: ["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"]
+
+classical:
+    _target_: base_nsga_ii.ClassicalNSGAII
+    _partial_: True
+    activate_logging: True
+    pop_object:
+        _target_: base_nsga_ii.ClassicalPopulation
+        N: 50
+        decoding_method: "apply_operation_based_bierwirth"
+        activate_schedule: True
+        tournament_size: 2
+        mating_pool_size: 50
+        mutation_probability: 0.4
+
+quantum_position_encoding:  
+    _target_: qmea.QMEA
+    _partial_: True
+    activate_logging: True
+    pop_object:
+        _target_: qmea.QMEAPopulation
+        N: 50
+        reset_fraction: 0 # Clip the bottom quarter -> reset chromosomes back to 50/50
+        activate_schedule: True
+        decoding_method: "apply_operation_based_bierwirth"
+        individual_type: QChromosomePositionEncoding
+        time_log: False
+        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]" #"[0.2*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.2*np.pi, 0]" #"[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
+        group_partitions: 5
+        individual_cfg: 
+            restrict_permutation: False 
+            mutation_rate: 0.2
+
+quantum_hash_base_encoding: 
+    _target_: qmea.QMEA
+    _partial_: True
+    activate_logging: True
+    pop_object:
+        _target_: qmea.QMEAPopulation
+        N: 50
+        reset_fraction: 0 # Clip the bottom quarter -> reset chromosomes back to 50/50
+        activate_schedule: True
+        decoding_method: "apply_operation_based_bierwirth"
+        individual_type: QChromosomeHashMultisetImprovedEncoding
+        time_log: False
+        rotation_angles: "[0.1*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.1*np.pi, 0]"
+        group_partitions: 8
+        individual_cfg:  
+            mutation_rate: 0.3
+            reset_frequency: 3

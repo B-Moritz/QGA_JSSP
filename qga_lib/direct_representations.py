@@ -27,21 +27,42 @@ def create_random_jssp_problem(n_jobs, n_machines):
 
     return problem_matrix
 
+def create_multiset_permutation(j, m):
+    """This method is used to create a random permutation of multisets.
+       The variable j is sthe number of different objects and m is the number of identical objects
 
-def create_m_rep_permutation(n_jobs: int, n_machines: int) -> np.ndarray:
-    """Method used to generate a random permutation with repetition where the number of repetition per job int is given by n_machines."""
-    # create a random permutation of size j*m. 
-    indexes = np.random.permutation(n_machines*n_jobs)
-    # The empty chromosome
-    j_rep_permutation = np.empty_like(indexes)
+    Parameters
+    ----------
+    j : int
+        Number of jobs in the permutation (number of unique objects).
+    m : int
+        Number of repetitions of the job number in the permutation (number of machines a job can be assigned to).
 
-    for i in range(len(indexes)):
-        # The integers are used as indexes for plasing the job number between 0 and j in the chromosome array
-        cur_index = indexes[i]
-        j_rep_permutation[cur_index] = i % n_jobs
+    Returns
+    -------
+    _type_
+        _description_
+    """
+    # Create the first permutation of multiset (starts at job 0 to job number j-1)
+    start_multiset = np.repeat(np.arange(j), m)
+    # Return a random shuffle of the initial permutaiton
+    return np.random.permutation(start_multiset)
 
-    # The chromosome contains a permutation with repetition and is returned
-    return j_rep_permutation
+#def create_m_rep_permutation(n_jobs: int, n_machines: int) -> np.ndarray:
+#    """Method used to generate a random permutation with repetition where the number of repetition per job int is given by n_machines."""
+#    # create a random permutation of size j*m. 
+#    indexes = np.random.permutation(n_machines*n_jobs)
+#    # The empty chromosome
+#    j_rep_permutation = np.empty_like(indexes)
+#
+#   for i in range(len(indexes)):
+#        # The integers are used as indexes for placing the job number between 0 and j in the chromosome array
+#        cur_index = indexes[i]
+#        j_rep_permutation[cur_index] = i % n_jobs
+#
+#    # The chromosome contains a permutation with repetition and is returned
+#    return j_rep_permutation
+
 
 def apply_operation_based_bierwirth(
         n_jobs: int, 
@@ -88,20 +109,22 @@ def apply_operation_based_bierwirth(
             print(j_rep_permutation)
             print(np.bincount(j_rep_permutation))
             exit()
-        # First determine which machine the job should be on
+        # First determine the start time for the operation
         if m_start_t[cur_machine] >= j_start_t[cur_job]:
+            # Comapre the next possible start time of the machine and the job, 
+            # and select the highest as the current starting time for the operation
             cur_start = m_start_t[cur_machine]
         else:
             cur_start = j_start_t[cur_job]
 
+        # Extract the current durration from jssp problem definiton
         cur_duration = jssp_problem[1][cur_job][T_counter[cur_job]]
-
-
+        # Set the new start times for the machine and for the job
         m_start_t[cur_machine] = cur_start + cur_duration
         j_start_t[cur_job] = cur_start + cur_duration
-
+        # Create the operation and add it to the operation list
         operation_list[k] = Operation(cur_job, cur_machine, cur_duration, cur_start)
-        # Increment the mahcine counter
+        # Increment the machine counter for the current job to allow progress
         T_counter[cur_job] += 1
 
     return operation_list

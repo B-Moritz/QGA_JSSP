@@ -1,9 +1,10 @@
+defaults:
+- experiment: basic
+
 experiment:
     repetitions: 1
-    n_iterations: 100
+    n_iterations: 150
     problem_names: ['ft20'] #['ft06', 'ft10', 'ft20']   #, 'abz7', 'abz8', 'abz9']
-    log_path: ["..", "..", "logdata2", "Experiment"]
-    experiment_id: 2
     dump_population: False
 
 classical:
@@ -15,7 +16,7 @@ classical:
         N: 50
         decoding_method: "apply_operation_based_bierwirth"
         activate_schedule: True
-        tournament_size: 5
-        mating_pool_size: 20
-        mutation_probability: 0.3
+        tournament_size: 2
+        mating_pool_size: 50
+        mutation_probability: 0.6
     

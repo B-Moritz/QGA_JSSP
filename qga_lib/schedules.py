@@ -98,10 +98,20 @@ class Schedule:
         sum = 0
         for job in range(self.n_jobs):
             # For each job find the last operations
-            for i in range(1, len(self.operation_list)+1):
-                if job == self.operation_list[-i].job:
-                    sum += self.operation_list[-i].get_completion_time()
-                    break
+            start_time = 0
+            start_time_found = False
+            machine_counter = self.n_machines
+            for cur_operation in self.operation_list:
+                if job == cur_operation.job:
+                    if not start_time_found:
+                        start_time_found = True
+                        start_time = cur_operation.start
+                    
+                    if machine_counter == 1:
+                        sum += cur_operation.get_completion_time() - start_time
+                        break
+
+                    machine_counter -= 1
         
         self.mean_flow_time = sum/self.n_jobs
         return self.mean_flow_time

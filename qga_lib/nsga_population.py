@@ -7,6 +7,8 @@
     References:
         * Ripon, K. S. N., Tsang, C.-H., & Kwong, S. (2007). An Evolutionary Approach for Solving the Multi-Objective Job-Shop Scheduling Problem. In Studies in Computational Intelligence (Vol. 49, pp. 165–195). https://doi.org/10.1007/978-3-540-48584-1_7
         * Deb, K., Pratap, A., Agarwal, S., & Meyarivan, T. (2002). A fast and elitist multiobjective genetic algorithm: NSGA-II. IEEE Transactions on Evolutionary Computation, 6(2), 182–197. IEEE Transactions on Evolutionary Computation. https://doi.org/10.1109/4235.996017
+        * Bierwirth, C. (1995). A generalized permutation approach to job shop scheduling with genetic algorithms. Operations-Research-Spektrum, 17(2), 87–92. https://doi.org/10.1007/BF01719250
+
 
 
     """
@@ -29,6 +31,217 @@ from typing import List
 
 from individual import * #Individual, QChromosomeRepairPermutationEncoding, QChromosomePositionEncoding, QChromosomeHashPermutationEncoding, QChromosomeHashMultisetEncoding, QChromosomeHashMultisetImprovedEncoding
 import datetime
+
+class Node:
+    """Class representing each individual node in the linked list object LinkedList
+    """
+    # The node value stored
+    node_value = None
+    # The reference to the next node
+    next_node = None
+
+    def __init__(self, node_value, next_node):
+        """Initialization of the node
+
+        Parameters
+        ----------
+        node_value : any
+            The value stored at the position in the Linked List that this node should represent.
+        next_node : Node
+            Reference to the next node in the linked list. None if it is the last node in the list.
+        """
+        self.node_value = node_value
+        self.next_node = next_node
+
+    def get_next(self):
+        # Returns the reference to the next node/element in the list
+        return self.next_node
+    
+    def get_value(self):
+        # Returns the stored value of the node
+        return self.node_value
+    
+    def set_next(self, next_node):
+        # Helper method for adding the reference to the next list node
+        self.next_node = next_node
+    
+
+class LinkedList:
+    """Limited implementation of the linked list suited specially for the GOX algorithm used in the classical NSGA-II implementation
+    """
+    # Reference to the first node in the list
+    start_node = None
+    # Reference to the last node in the list
+    end_node = None
+    # The length of the array
+    length = 0
+
+    def __init__(self, initial_array: np.ndarray):
+        """Initialization of the LinkedList object.
+
+        Parameters
+        ----------
+        initial_array : np.ndarray
+            The array that should be converted to linked list.
+
+        Raises
+        ------
+        Exception
+            The provided array is of an unsupported format.
+        """
+        if not type(initial_array) == np.ndarray or not len(initial_array.shape) == 1:
+            # Raise exception if the provided array is unsupported
+            raise Exception("The provided iterable was not recognized.")
+        
+        if len(initial_array) == 0:
+            # If the array should be empty, skip initialization
+            return
+        
+        # Create the last node in the list first
+        self.end_node = previous_node = Node(initial_array[-1], None)
+        self.length += 1
+        for i in reversed(range(len(initial_array)-1)):
+            # For each element ot add, create Node referencing the previously created node and store the reference for the next iteration
+            previous_node = Node(initial_array[i], previous_node)
+            self.length += 1
+        # Set the last created node as the start of the list
+        self.start_node = previous_node
+
+    def remove_node(self, delete_node: Node, previous_node: Node):
+        """Method for removing a node from the linked list.
+
+        Parameters
+        ----------
+        delete_node : Node
+            Reference to node to be deleted.
+        previous_node : Node
+            Reference to the preceeding node to couple past the delte_node
+
+        Returns
+        -------
+        any
+            The value of the removed node is returned
+        """
+        temp_value = delete_node.get_value()
+
+        if delete_node == self.start_node:
+            # If the node to be deleted is at index 0
+            self.start_node = delete_node.get_next()
+            return temp_value
+        
+        if delete_node == self.end_node:
+            # If the deleted node is at index -1
+            self.end_node = previous_node
+            return temp_value
+        
+        previous_node.set_next(delete_node.get_next())
+        self.length -= 1
+        return temp_value
+    
+    def insert_nodes(self, new_values: np.ndarray, insert_after_node: Node):
+        """Method for inserting an array of nodes after a given node.
+
+        Parameters
+        ----------
+        new_values : np.ndarray
+            The array containing the values to be added
+        insert_after_node : Node
+            The node that should preceed the new values
+
+        Raises
+        ------
+        Exception
+            The array provided as argument does not hav ethe correct format
+        """
+        if not type(new_values) == np.ndarray or not len(new_values.shape) == 1:
+            # Check that the inputed array is supported
+            raise Exception("The provided iterable was not recognized.")
+        
+        if not insert_after_node:
+            # If the array is inserted in the ront
+            cur_next = self.start_node
+            for i in reversed(range(len(new_values))):
+                # For each new node value, from the last to first (reversed)
+                # Create new node with the current next as next node, and store the new node as next reference
+                cur_next = Node(new_values[i], cur_next)
+                # Increment length
+                self.length += 1
+            # Set the new start node
+            self.start_node = cur_next
+        elif insert_after_node == self.end_node:
+            # The array is appended to the list
+            cur_next = None
+            # Set new end node
+            self.end_node = cur_next = Node(new_values[-1], cur_next)
+            for i in reversed(range(len(new_values)-1)):
+                # For each new node value, from the last to first (reversed)
+                # Create new node with the current next as next node, and store the new node as next reference
+                cur_next = Node(new_values[i], cur_next)
+                # Increment length
+                self.length += 1
+
+            insert_after_node.set_next(cur_next)
+        else:
+            # Get reference to the node proceeding the new nodes
+            cur_next = insert_after_node.get_next()
+            for i in reversed(range(len(new_values))):
+                # For each new node value, from the last to first (reversed)
+                # Create new node with the current next as next node, and store the new node as next reference
+                cur_next = Node(new_values[i], cur_next)
+                # Increment length
+                self.length += 1
+
+            insert_after_node.set_next(cur_next)
+
+
+
+    def to_ndarray(self) -> np.ndarray:
+        resulting_array = []
+        cur_node = self.start_node
+        while not self.end_node == cur_node:
+            resulting_array.append(cur_node.get_value())
+            cur_node = cur_node.get_next()
+        
+        resulting_array.append(self.end_node.get_value())
+        return np.array(resulting_array)
+
+    
+    def __str__(self):
+        # Method for implicitly converting the object into a string representation - the class supports print(LinkedListinstance)
+        cur_node = self.start_node
+        list_string = "["
+
+        while not cur_node is self.end_node:
+            list_string += str(cur_node.get_value()) + ", "
+            cur_node = cur_node.get_next()
+
+        list_string += str(cur_node.get_value()) + "]"
+        return list_string
+    
+    def __iter__(self):
+        # Initialization of the iterator
+        self.current_iterator_node = self.start_node
+        self.iterator_finished = False
+        return self
+    
+    def __next__(self):
+        # Definition of each iteration of the iterator
+        if self.iterator_finished:
+            raise StopIteration
+        
+        if self.current_iterator_node == self.end_node:
+            self.iterator_finished = True
+            return self.end_node
+        else:
+            temp_node = self.current_iterator_node
+            self.current_iterator_node = self.current_iterator_node.get_next()
+            return temp_node
+        
+    def __len__(self):
+        # hook method to support len()
+        return self.length
+
+
 
 class Population:
     # Consists of the parent and ofspring population P_t and Q_t to form the full population R_t
@@ -137,7 +350,7 @@ class Population:
             cur_length = self.front_start_index[i+1] - self.front_start_index[i]
             return([self.front_start_index[i], self.front_start_index[i+1], cur_length])
         
-    def get_performance(self) -> np.ndarray:
+    def get_performance(self, is_last_iteration=False) -> np.ndarray:
         """This method is used to calculate the performance metrics for the non-dominated front
 
         Returns
@@ -145,12 +358,17 @@ class Population:
         np.ndarray
             Array containing the metrics: makespan [min, avg], mean flow time [min, avg], spread
         """
+        if is_last_iteration:
+            cur_spread, cur_length = self.calculate_spread_euclidian(is_last_iteration)
+        else:
+            cur_spread, cur_length = self.calculate_spread_euclidian(is_last_iteration)
+
         cur_range = self.get_front_range(0)
         result = {"Makespan": {"Avg" : 0, "Min": np.inf, "Max" : 0}, 
                   "Mean flow time": {"Avg" : 0, "Min": np.inf, "Max" : 0}, 
-                  "Spread" : self.calculate_spread_euclidian(), 
+                  "Spread" : cur_spread, 
                   "n_fronts" : len(self.front_start_index),
-                  "n_non_dominated_solutions" : len(self.nd_front_crowding_distance)
+                  "n_non_dominated_solutions" : cur_length
                 }
         
         for i in range(cur_range[1]):
@@ -176,7 +394,7 @@ class Population:
         result["Mean flow time"]["Avg"] = result["Mean flow time"]["Avg"] / cur_range[2]
         return result
 
-    def calculate_spread_euclidian(self):
+    def calculate_spread_euclidian(self, is_last_iteration=False):
         """This method calculates the spread metric proposed by (Deb et al., 2002)
 
         uses the crowding_distance_data attribute
@@ -190,7 +408,23 @@ class Population:
             # If there is only one solution that is non-dominated, 
             # return infinity to emphazise the need for more than 
             # one solutions in the converged front
-            return np.inf
+            return (np.inf, 1)
+        
+        if is_last_iteration:
+            # Remove the duplicated 
+            temp_nd = self.nd_front_crowding_distance
+            self.nd_front_crowding_distance = copy.deepcopy(temp_nd)
+            counter = 0
+            while counter < len(self.nd_front_crowding_distance):
+                cur_keep_individual = self.nd_front_crowding_distance[counter]
+                k = counter+1
+                for indiv in self.nd_front_crowding_distance[counter+1:]:
+                    if indiv["makespan"] == cur_keep_individual["makespan"] and indiv["mean flow time"] == cur_keep_individual["mean flow time"]:
+                        self.nd_front_crowding_distance = np.delete(self.nd_front_crowding_distance, k)
+                    else:
+                        k += 1
+                counter += 1
+    
         
         #d_extreme = (self.crowding_distance_data["makespan"].max() - self.crowding_distance_data["makespan"].min())**2
         #d_extreme += (self.crowding_distance_data["mean flow time"].max() - self.crowding_distance_data["mean flow time"].min())**2
@@ -224,7 +458,12 @@ class Population:
         denominator = (d_extreme + len(di_list)*d_mean)
         # Return the calculated spread
         S = (d_extreme + di_mean_sum)/denominator
-        return  S
+        return_length = len(self.nd_front_crowding_distance)
+        if is_last_iteration:
+            # Set nd back to containing the duplicates to avoid interfering with the update operation
+            self.nd_front_crowding_distance = temp_nd
+
+        return (S, return_length)
 
     def calculate_spread_cd(self):
         # Measure of how diverse the pareto front is.
@@ -416,24 +655,39 @@ class ClassicalPopulation(Population):
         # Fintess values are available as self.R[i].schedule.max_completion_time
 
     def select_parents(self):
+        """This method performs k-tournament selection to obtain all parents needed for the mating pool.
+        The result of this method, is a mating_pool ready for recombination.
+        The tournament selection uses the rank of the individuals in the population when determining the winner of the tournament.
+        Note that there is replacement, meaning that the same solution can be picked several times.
+        Parents are only picked amon the N first individuals of the populaiton.
+        """
         self.mating_pool = np.empty(self.mating_pool_size, dtype=Individual)
         for selected_index in range(len(self.mating_pool)):
             # Find the smallest index among the integers representing the index of the array R sorted by non-dominated sorting and then crowding distance
             cur_index = np.min(np.random.randint(0, self.N, self.tournament_size))
+            # Adding solution to the mating pool
             self.mating_pool[selected_index] = self.R[cur_index]
 
         
     def execute_recombination(self):
         # performs crossover on the mating_pool to fill the second half of the population
-        offspring_index = self.N
-        for m_index in range(0, len(self.mating_pool), 2):
-            donator = self.mating_pool[m_index].permutation
-            receiver = self.mating_pool[m_index + 1].permutation
-            self.R[offspring_index] = self.gox_crossover(donator, receiver)
-            # perform mutation on child
-            needle = np.random.uniform()
-            if self.mutation_probability >= needle:
-                self.R[offspring_index].permutation = self.job_pair_mutation(self.R[offspring_index].permutation)
+        offspring_offset = self.N
+        offspring_index = 0
+        while offspring_index < self.N:
+            for m_index in range(0, len(self.mating_pool), 2):
+                # For each two pairs in the mating pool determine the donator and the receiver
+                donator = self.mating_pool[m_index].permutation
+                receiver = self.mating_pool[m_index + 1].permutation
+                # Perform the recombination and replace the existing solutions in the population with the offspring produced
+                self.R[offspring_offset + offspring_index] = self.gox_crossover(donator, receiver)
+                # perform mutation on offspring
+                needle = np.random.uniform()
+                if self.mutation_probability >= needle:
+                    self.R[offspring_offset + offspring_index].permutation = self.job_pair_mutation(self.R[offspring_offset + offspring_index].permutation)
+                
+                offspring_index += 1
+                if offspring_index == self.N:
+                    return
 
     def job_pair_mutation(self, cur_genotype: np.ndarray) -> np.ndarray:
         # job-pair exchange mutation operator (Ripon et al., 2007)
@@ -459,7 +713,7 @@ class ClassicalPopulation(Population):
         return cur_genotype
 
     def gox_crossover(self, donator: np.ndarray, receiver: np.ndarray):
-        """This method performs the Generalized Order Crossover described in (Ripon et al., 2007).
+        """This method performs the Generalized Order Crossover described in (Bierwirth, 1995).
 
         Parameters
         ----------
@@ -476,61 +730,66 @@ class ClassicalPopulation(Population):
         # Define the range in the parent genotype that should be extracted
         start_range = np.random.randint(0, len(donator))
         section = np.random.uniform() * (0.5-0.3) + 0.3 # Random value between 0.3 and 0.5
-        lenght_of_range = int(np.floor(section*len(donator)))
+        lenght_of_range = int(section*len(donator))
         stop_range = int(start_range + lenght_of_range) % len(donator)
         # Changes are made to the receiver. It is therefore copied here to avoid sideeffects for the method
-        copy_receiver = copy.deepcopy(receiver)
+        linked_receiver = LinkedList(receiver)
         # The child individual is created by modifying the receiver genotype 
-        # First find all the genes that correspond to the genes in the donator are removed by setting them to np.inf 
+        # First find all the genes that correspond to the genes in the donator
+        # They are then removed by setting them to -1
+        insert_after_node = None
         for j in range(self.n_jobs):
             # For each job - iterate over the receiver 
-            swap_counter = 0
+            donator_counter = 0
+            receiver_counter = 0
+            previous_node = None
+            cur_node = linked_receiver.start_node
             for k in range(len(donator)):
                 # For each job_index in m1 check for match in receiver
                 if donator[k] == j:
-                    # If the current job in the donator corresponds to the current job - find the 
-                    matched = False
-                    while not matched:
-                        if copy_receiver[swap_counter] == j:
-                            # Found match
-                            matched = True
-                            if ((start_range < stop_range) and (k >= start_range and k < stop_range)) \
-                                or ((start_range > stop_range) and not (k < start_range and k >= stop_range)):
-                                # The match is in range and should be deleted    
-                                copy_receiver[swap_counter] = -1
-                            
-                        swap_counter += 1
+                    donator_counter += 1
+                    # If the current job in the donator corresponds to the current job - find the
+                    while not previous_node == linked_receiver.end_node:
+                        if cur_node.get_value() == j:
+                            receiver_counter += 1
+                            # Found the matching job number
+                            if ((start_range < stop_range) and (k >= start_range and k < stop_range) and donator_counter == receiver_counter) \
+                                or ((start_range > stop_range) and not (k < start_range and k >= stop_range) and donator_counter == receiver_counter):
+                                # The match is in range
+                                if k == start_range:
+                                    insert_after_node = previous_node
+
+                                temp_next_node = cur_node.get_next()
+                                if insert_after_node == cur_node:
+                                    insert_after_node = previous_node
+                                    
+                                linked_receiver.remove_node(cur_node, previous_node)
+                                cur_node = temp_next_node
+                                break
+                            else:
+                                previous_node = cur_node
+                                cur_node = cur_node.get_next()
+                                break
+
+                        previous_node = cur_node
+                        cur_node = cur_node.get_next()
 
         # Find the injection position
-        injection_index = np.where(copy_receiver == -1)[0][0]
-        child_chromosome = np.empty(len(copy_receiver), dtype=int)
+        #injection_index = np.where(copy_receiver == -1)[0][0]
+        #child_chromosome = np.empty(len(copy_receiver), dtype=int)
         # Need to distinguish between wrapper and normal case
         if start_range > stop_range:
             # Wrapper case
-            # First insert the code from donor into the child
-            child_chromosome[:stop_range] = donator[:stop_range]
-            child_chromosome[start_range:] = donator[start_range:]
-            # Now the part from receiver 
-            try:
-                child_chromosome[stop_range:start_range] = copy_receiver[copy_receiver != -1]
-            except Exception as e:
-                print("Wrapper case")
-                print(e)
-                pdb.set_trace()
+            # Insert the first elements of the crossover string at the back
+            linked_receiver.insert_nodes(donator[start_range:], insert_after_node)
+            # Insert the last elements of the crossover string at the beginning
+            linked_receiver.insert_nodes(donator[:stop_range], None)
         else:
             # Normal case
-            # Inject the section 
-            child_chromosome[injection_index: injection_index + lenght_of_range] = donator[start_range:stop_range]
-            # Inject the first numbers to the right of slice
-            child_chromosome[:injection_index] = copy_receiver[:injection_index]
-            # insert the remaining numbers from receiver to the right of slice that are not -1
-            try:
-                child_chromosome[injection_index + lenght_of_range:] = receiver[copy_receiver != -1][injection_index:]
-            except Exception as e:
-                print("Normal case")
-                print(e)
-                pdb.set_trace()
+            # Inject crossover string
+            linked_receiver.insert_nodes(donator[start_range:stop_range], insert_after_node)
 
+        child_chromosome = linked_receiver.to_ndarray()
         return PermutationChromosome(child_chromosome, self.n_jobs, self.n_machines)
 
 class QMEAPopulation(Population):
@@ -625,6 +884,7 @@ class QMEAPopulation(Population):
             # Remove mutations from the best group.
             self.R[s].mutation_flags *= 0
 
+        # Reset individuals that are duplicated
         cur_range = self.get_front_range(0)
         front_indexes = np.arange(cur_range[0], cur_range[1]).tolist()
         while len(front_indexes) > 0:
@@ -633,6 +893,7 @@ class QMEAPopulation(Population):
             for j in range(1, len(front_indexes)):
                 comp_makespan, comp_flow = self.R[front_indexes[j]].cur_fitness
                 if cur_makespan == comp_makespan and cur_flow == comp_flow:
+                    # Set amplitudes to 1/sqrt(2)
                     self.R[front_indexes[j]].binary_chromosome[0, :] = np.sqrt(2)**(-1)
                     self.R[front_indexes[j]].binary_chromosome[1, :] = np.sqrt(2)**(-1)
                     temp_front_indexes.append(j)

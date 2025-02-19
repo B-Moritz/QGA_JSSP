@@ -7,6 +7,13 @@ class Operation:
 
 
     def get_completion_time(self):
+        """Returns the time when the operation is finished
+
+        Returns
+        -------
+        int
+            Finish time of the operation
+        """
         return self.start + self.duration
 
     def __str__(self):

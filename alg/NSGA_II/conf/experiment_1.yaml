@@ -11,8 +11,8 @@ classical:
         decoding_method: "apply_operation_based_bierwirth"
         activate_schedule: True
         tournament_size: 2
-        mating_pool_size: 20
-        mutation_probability: 0.25
+        mating_pool_size: 50
+        mutation_probability: 0.4
 
         
         

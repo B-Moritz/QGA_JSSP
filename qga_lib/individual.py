@@ -119,7 +119,7 @@ class PermutationChromosome(Individual):
 
     def create_permutation_chromosome(n_jobs: int, n_machines: int, time_log: bool=False):
         # Generator funciton for creating an individual object
-        permutation = create_m_rep_permutation(n_jobs, n_machines)
+        permutation = create_multiset_permutation(n_jobs, n_machines)
         return PermutationChromosome(permutation, n_jobs, n_machines, time_log)
 
 
@@ -171,6 +171,7 @@ class QChromosome(Individual):
                c: int, 
                c_tot: int,
                n_groups: int,
+               cur_group,
                rotation_angles: str="[0.2*np.pi, 0, 0.5*np.pi, 0, 0.5*np.pi, 0, 0.2*np.pi, 0]"
                ):
         """This method executes the rotation operation to perturb the amplitudes of the qubits constituting the quantum chromosome
@@ -689,8 +690,9 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
     def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, time_log: bool=False):
         super().__init__(n_jobs, n_machines, time_log)
         # Saving the schedule bounds from config as attributes
-        self.schedule_lb = individual_cfg.schedule_lb
-        self.schedule_ub = individual_cfg.schedule_ub
+        #self.schedule_lb = individual_cfg.schedule_lb
+        #self.schedule_ub = individual_cfg.schedule_ub
+        self.reset_frequency = individual_cfg.reset_frequency
         # Determine how many bits are needed to represent the job number
         self.n_bits = self.calc_n_bits(n_jobs, n_machines) #int((self.n_jobs*self.n_machines*(np.log(self.n_machines*self.n_jobs) - np.log(self.n_jobs))/np.log(2))) #int(np.log2(self.n_jobs-1) + 1)
         # Create the amplitudes for the chromosome
@@ -995,6 +997,8 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
             Number of groups that solutions are divided into
         cur_group : int
             The id of the group that the current idividual belongs to.
+        restart_frequency : int
+            The number of times the individual is reset and the cover schedule is restarted
         rotation_angles : str, optional
             The rotation angles for each combination of b and x bit, by default "[0.2*np.pi, 0, 0.5*np.pi, 0, 0.5*np.pi, 0.5*np.pi, 0, 0.2*np.pi]"
 
@@ -1004,55 +1008,68 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
             If the rotation angle does not contain 8 values.
         """
         # Find the static portion for this individual
-        lb = lambda c: (c**2)/(c_tot**2)
-        ub = lambda c: np.log(c)/np.log(c_tot)
+        #lb = lambda c: (c)/(c_tot)
+        #ub = lambda c: np.log(c)/np.log(c_tot)
         c = np.array([c])
+        reset_iterations = np.floor(c_tot/self.reset_frequency)
+        cur_periodic_c = c % reset_iterations
+        if cur_periodic_c <= 0:
+            cur_periodic_c = np.array([1])
+        schedule_development = lambda c: np.log(cur_periodic_c)/np.log((reset_iterations)*0.8)
 
-        if c <= 0:
-            cur_ub = self.schedule_ub
-        else:    
-            cur_ub = ub(c)
+        #if c <= 0:
+        #    cur_ub = self.schedule_ub
+        #else:    
+        #    cur_ub = ub(c)
 
-        cur_lb = lb(c)
-        cur_ub[np.where(cur_ub < self.schedule_ub)[0]] = self.schedule_ub
-        cur_lb[np.where(cur_lb < self.schedule_lb)[0]] = self.schedule_lb
-        d = (cur_ub - cur_lb)/(n_groups-1)
+        #cur_lb = lb(c)
+        #cur_ub[np.where(cur_ub < self.schedule_ub)[0]] = self.schedule_ub
+        #cur_lb[np.where(cur_lb < self.schedule_lb)[0]] = self.schedule_lb
+        #d = (cur_ub - cur_lb)/(n_groups-1)
+        static_portion = schedule_development(c)
+        static_portion[np.where(static_portion > 0.98)[0]] = 0.98
 
-        static_portion = cur_ub - (cur_group)*d
+        #static_portion = cur_ub - (cur_group)*d
 
         cached_shape = b.x.shape
         cutoffpoint = int(np.floor(cached_shape[0]*static_portion))
         cur_b = b.x[cutoffpoint:]
         cur_x = self.x[cutoffpoint:]
         
-        # Test that the rotation angles are valid
-        raw_rotation_angles = eval(rotation_angles)
-        if len(raw_rotation_angles) != 8:
-            raise ValueError("Please specify rotation angle array of length 8.")
+        if c % reset_iterations == 0:
+            # reset chromosome
+            self.binary_chromosome[0, : ] = np.sqrt(2)**(-1)
+            self.binary_chromosome[1, : ] = np.sqrt(2)**(-1)
 
-        rotation_angles = np.array(raw_rotation_angles) #np.repeat([raw_rotation_angles], self.n_bits*self.n_jobs*self.n_machines, axis=0)
-        #rotation_angles = rotation_angles.reshape(self.n_machines, self.n_bits*self.n_jobs, -1)
+        else:
+            # Test that the rotation angles are valid
+            raw_rotation_angles = eval(rotation_angles)
+            if len(raw_rotation_angles) != 8:
+                raise ValueError("Please specify rotation angle array of length 8.")
 
-        signs = np.array([-1, 0, 1, 0, -1, 0, 1, 0]) #np.repeat([np.array([-1, 0, 1, 0, -1, 0, 1, 0])], self.n_bits*self.n_jobs*self.n_machines, axis=0)
-        #signs = signs.reshape(self.n_machines, self.n_jobs*self.n_bits, -1)
-        #for i in range(len(cur_x)):
-        pi = cur_x.astype(int) * (2**2)
-        bi = cur_b.astype(int) * (2**1)
-        # the best individual has always a better fintess in  this case
-        better = int(False) 
-        index = (pi + bi + better).ravel() #int(str(pi) + str(bi) + str(better), 2)
-        cur_sign = (self.binary_chromosome[0, cutoffpoint:] * self.binary_chromosome[1, cutoffpoint:]) < 0
-        cur_angle = rotation_angles[index] * signs[index] * (((-2)*cur_sign.astype(int).ravel())+1)
-        cur_angle = cur_angle.reshape(cur_b.shape)
-        # Apply the rotation
-        new_a = self.binary_chromosome[0, cutoffpoint:]*np.cos(cur_angle) - self.binary_chromosome[1, cutoffpoint:]*np.sin(cur_angle)
-        new_b = self.binary_chromosome[0, cutoffpoint:]*np.sin(cur_angle) + self.binary_chromosome[1, cutoffpoint:]*np.cos(cur_angle)
+            rotation_angles = np.array(raw_rotation_angles) #np.repeat([raw_rotation_angles], self.n_bits*self.n_jobs*self.n_machines, axis=0)
+            #rotation_angles = rotation_angles.reshape(self.n_machines, self.n_bits*self.n_jobs, -1)
 
-        self.binary_chromosome[0, cutoffpoint:] = new_a
-        self.binary_chromosome[1, cutoffpoint:] = new_b
-        # Converge more significant bits
-        self.binary_chromosome[0, :cutoffpoint] = np.logical_not(b.x[:cutoffpoint])
-        self.binary_chromosome[1, :cutoffpoint] = b.x[:cutoffpoint]
+            signs = np.array([-1, 0, 1, 0, -1, 0, 1, 0]) #np.repeat([np.array([-1, 0, 1, 0, -1, 0, 1, 0])], self.n_bits*self.n_jobs*self.n_machines, axis=0)
+            #signs = signs.reshape(self.n_machines, self.n_jobs*self.n_bits, -1)
+            #for i in range(len(cur_x)):
+            pi = cur_x.astype(int) * (2**2)
+            bi = cur_b.astype(int) * (2**1)
+            # the best individual has always a better fintess in  this case
+            better = int(False) 
+            index = (pi + bi + better).ravel() #int(str(pi) + str(bi) + str(better), 2)
+            cur_sign = (self.binary_chromosome[0, cutoffpoint:] * self.binary_chromosome[1, cutoffpoint:]) < 0
+            cur_angle = rotation_angles[index] * signs[index] * (((-2)*cur_sign.astype(int).ravel())+1)
+            cur_angle = cur_angle.reshape(cur_b.shape)
+            # Apply the rotation
+            new_a = self.binary_chromosome[0, cutoffpoint:]*np.cos(cur_angle) - self.binary_chromosome[1, cutoffpoint:]*np.sin(cur_angle)
+            new_b = self.binary_chromosome[0, cutoffpoint:]*np.sin(cur_angle) + self.binary_chromosome[1, cutoffpoint:]*np.cos(cur_angle)
+
+            self.binary_chromosome[0, cutoffpoint:] = new_a
+            self.binary_chromosome[1, cutoffpoint:] = new_b
+            # Converge more significant bits
+            self.binary_chromosome[0, :cutoffpoint] = np.logical_not(b.x[:cutoffpoint])
+            self.binary_chromosome[1, :cutoffpoint] = b.x[:cutoffpoint]
        
 
 if __name__=="__main__":

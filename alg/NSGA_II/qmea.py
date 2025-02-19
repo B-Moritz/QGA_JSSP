@@ -42,7 +42,8 @@ class QMEA(JsspAlgorithm):
             self.pop_object.crowding_distance_sort_all_fronts()
             self.pop_object.execute_quantum_update(iteration_number, self.n_iterations)
             
-            cur_result = self.pop_object.get_performance()
+            is_last_iteration = True if self.n_iterations == iteration_number else False
+            cur_result = self.pop_object.get_performance(is_last_iteration=is_last_iteration)
             cur_result["Iteration"] = iteration_number
             self.print_performance(cur_result)
             if self.activate_logging:
