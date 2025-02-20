@@ -3,7 +3,7 @@ defaults:
 
 experiment:
     repetitions: 1
-    n_iterations: 150
+    n_iterations: 10
     problem_names: ['ft20']
 
 classical:

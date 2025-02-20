@@ -403,15 +403,9 @@ class Population:
         -------
         float
             The spread value for the current Pareto-front
-        """
-        if len(self.nd_front_crowding_distance) < 2:
-            # If there is only one solution that is non-dominated, 
-            # return infinity to emphazise the need for more than 
-            # one solutions in the converged front
-            return (np.inf, 1)
-        
+        """       
         if is_last_iteration:
-            # Remove the duplicated 
+            # Remove the duplicated solutions
             temp_nd = self.nd_front_crowding_distance
             self.nd_front_crowding_distance = copy.deepcopy(temp_nd)
             counter = 0
@@ -424,7 +418,12 @@ class Population:
                     else:
                         k += 1
                 counter += 1
-    
+
+        if len(self.nd_front_crowding_distance) < 2:
+            # If there is only one solution that is non-dominated, 
+            # return infinity to emphazise the need for more than 
+            # one solutions in the converged front
+            return (np.inf, 1)
         
         #d_extreme = (self.crowding_distance_data["makespan"].max() - self.crowding_distance_data["makespan"].min())**2
         #d_extreme += (self.crowding_distance_data["mean flow time"].max() - self.crowding_distance_data["mean flow time"].min())**2
