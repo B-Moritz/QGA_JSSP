@@ -24,9 +24,9 @@ services:
   #  command: ./run_hash_based.bash
 
   qga_improv_rnadom_key:
-   build:
+    build:
       context: .
       volumes:
         - ./logdata_2:/QGA_JSSP/logdata_2
       cpuset: "2"
-      command: ./run_hash_based.bash
+      command: ./run_improved_random_key.bash
