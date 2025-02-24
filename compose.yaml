@@ -15,10 +15,18 @@ services:
   #  cpuset: "1"
   #  command: ./run_position_experiment.bash
 
-  qga_hash_jssp:
-    build:
+  #qga_hash_jssp:
+  #  build:
+  #    context: .
+  #  volumes:
+  #    - ./logdata_2:/QGA_JSSP/logdata_2
+  #  cpuset: "2"
+  #  command: ./run_hash_based.bash
+
+  qga_improv_rnadom_key:
+   build:
       context: .
-    volumes:
-      - ./logdata_2:/QGA_JSSP/logdata_2
-    cpuset: "2"
-    command: ./run_hash_based.bash
+      volumes:
+        - ./logdata_2:/QGA_JSSP/logdata_2
+      cpuset: "2"
+      command: ./run_hash_based.bash

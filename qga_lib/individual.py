@@ -1070,6 +1070,88 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
             # Converge more significant bits
             self.binary_chromosome[0, :cutoffpoint] = np.logical_not(b.x[:cutoffpoint])
             self.binary_chromosome[1, :cutoffpoint] = b.x[:cutoffpoint]
+
+
+class EnhancedQuantumRandomKeyIndividual(Individual):
+    
+    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, time_log: bool=False) -> None:
+        self.individual_cfg = individual_cfg
+        self.n_machines = n_machines
+        self.n_jobs = n_jobs
+        self.time_log = time_log
+        self.start_std = self.individual_cfg.start_std
+        self.base_permutation = np.repeat(np.arange(self.n_jobs), self.n_machines)
+        self.initialize_individual()
+        self.convert_permutation()
+
+    def initialize_individual(self):
+        self.positions = np.random.randint(0, self.n_jobs, size=self.n_jobs*self.n_machines)
+        self.standard_deviations = np.ones(shape=self.n_jobs*self.n_machines) * self.start_std
+        self.random_keys = np.zeros_like(self.positions)
+
+    def periodic_triangular_function_vectorized(self, x: np.ndarray, j: int) -> np.ndarray:
+        y = lambda x, offset, sign: sign*(x - offset)
+        y_res = np.empty_like(x)
+        
+        x1 = x[(np.floor(x) // j) % 2 == 0]
+        x2 = x[(np.floor(x) // j) % 2 > 0]
+
+        y_res[(np.floor(x) // j) % 2 == 0] = y(x1, (np.floor(x1) // j)*j, 1)
+        y_res[(np.floor(x) // j) % 2 > 0] = y(x2, ((np.floor(x2) // j)*j)+j, -1)
+
+        return np.floor(y_res)
+    
+    def measure(self):
+        self.random_keys = self.periodic_triangular_function_vectorized(np.round(np.random.normal(0, self.standard_deviations) + self.positions).astype(int), self.n_jobs-1)
+
+    def convert_permutation(self): 
+        self.permutation = self.base_permutation[np.argsort(self.random_keys)]
+
+    def rotate(self, 
+               b: object, 
+               c: int,
+               c_tot: int,
+               n_groups: int,
+               cur_group : int,
+               rotation_angles: str="[0, 0, 1, 0, 0, 0, 1, 0]",
+               std_deltas: str="[-0.3, -0.1, -0.3, -0.1]"):
+        
+        # transfer all angles into interval [0, j]
+        raw_rotation_angles = eval(rotation_angles)
+        if len(raw_rotation_angles) != 8:
+            raise ValueError("Please specify rotation angle array of length 8.")
+        
+        raw_std_deltas = eval(std_deltas)
+        if len(raw_std_deltas) != 4:
+            raise ValueError("Please specify std delta array of length 4.")
+
+        rotation_angles = np.array(raw_rotation_angles)
+        std_deltas = np.array(raw_std_deltas)
+
+        b_keys = b.random_keys
+        x_keys = self.random_keys
+        x_filtered = self.positions
+        # Check if the two angles are within the variance
+        equal_cases_overshoot = np.logical_and(b_keys == x_keys, (b_keys - x_keys) <= 0)
+        equal_cases_undershoot = np.logical_and(b_keys == x_keys, (b_keys - x_keys) >= 0)
+        unequal_cases_overshoot = np.logical_and(b_keys != x_keys, (b_keys - x_keys) < 0)
+        unequal_cases_undershoot = np.logical_and(b_keys != x_keys, (b_keys - x_keys) > 0)
+
+        x_filtered[equal_cases_overshoot] += rotation_angles[0] #np.random.uniform(0.01, 0.05)
+        x_filtered[unequal_cases_overshoot] -= rotation_angles[2] #np.random.uniform(0.01, 0.05)
+        x_filtered[equal_cases_undershoot] -= rotation_angles[4] #np.random.uniform(0.01, 0.05)
+        x_filtered[unequal_cases_undershoot] += rotation_angles[6] #np.random.uniform(0.01, 0.05)
+        # Contribute to std convergence
+        self.standard_deviations[equal_cases_overshoot] = np.abs(self.standard_deviations[equal_cases_overshoot] + std_deltas[0])
+        self.standard_deviations[unequal_cases_overshoot] = np.abs(self.standard_deviations[unequal_cases_overshoot] + std_deltas[1])
+        self.standard_deviations[equal_cases_undershoot] = np.abs(self.standard_deviations[equal_cases_undershoot] + std_deltas[2])
+        self.standard_deviations[unequal_cases_undershoot] = np.abs(self.standard_deviations[unequal_cases_undershoot] + std_deltas[3])
+        # If the standard deviaiton has become negative, make sure it is 
+        #self.standard_deviations[self.standard_deviations < 0] = 0
+        # Handle values outside the supported range
+        self.positions = np.abs(x_filtered) % self.n_jobs
+        return self.permutation
+
        
 
 if __name__=="__main__":

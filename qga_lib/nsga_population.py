@@ -23,7 +23,7 @@ from omegaconf import DictConfig
 
 from operations import Operation
 from schedules import Schedule
-from individual import Individual, PermutationChromosome
+from individual import Individual, PermutationChromosome, EnhancedQuantumRandomKeyIndividual
 from or_benchmark import BenchmarkCollection
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -294,7 +294,7 @@ class Population:
                 # For each individual go through the rest to find the best possible individual (that dominates all solutions)
                 dominated = False
                 for j in range(cur_start, len(self.R)):
-                    # swap if J dominates the
+                    # swap if J dominates the 
                     cur_comparison = np.array(self.R[j].cur_fitness) <= np.array(self.R[i].cur_fitness)
                     if (i != j) and (cur_comparison).all():
                         # Break the loop if the individual i is dominated -> means that the individual does not belong to the current front
@@ -309,9 +309,6 @@ class Population:
                     # Move swap position one step to the right
                     cur_swap_index += 1
 
-            # What happens when all solutions are dominated. 
-            # What happens if only one individual is in a front
-
             # Close the front 
             if cur_start == cur_swap_index:
                 # There is only one front in the set, 
@@ -323,8 +320,9 @@ class Population:
                 cur_start = cur_swap_index
 
         # Add the last front
-        if self.front_start_index[-1] < self.N:
-            self.front_start_index.append(self.N)
+        #if self.front_start_index[-1] < self.N:
+        self.front_start_index.append(cur_start)
+
 
 
     def get_front_range(self, i: int) -> List:
@@ -895,6 +893,115 @@ class QMEAPopulation(Population):
                     # Set amplitudes to 1/sqrt(2)
                     self.R[front_indexes[j]].binary_chromosome[0, :] = np.sqrt(2)**(-1)
                     self.R[front_indexes[j]].binary_chromosome[1, :] = np.sqrt(2)**(-1)
+                    temp_front_indexes.append(j)
+                    
+
+            front_indexes = temp_front_indexes
+
+
+class EnhancedQMEAPopulation(Population):
+    def __init__(self,
+                 N: int,
+                 reset_fraction: float,
+                 decoding_method: str,
+                 n_jobs: int,
+                 n_machines: int,
+                 jssp_problem: np.ndarray,
+                 individual_cfg: DictConfig,
+                 rotation_angles: str, 
+                 std_deltas: str,
+                 group_partitions: int,
+                 activate_schedule: bool=False,
+                 time_log: bool=False,
+                 individual_type="EnhancedQuantumRandomKeyIndividual"
+        ):
+        super().__init__(N, decoding_method, n_jobs, n_machines, jssp_problem, activate_schedule, time_log)
+        self.individual_type = individual_type
+        self.reset_fraction = reset_fraction
+        self.rotation_angles = rotation_angles
+        self.std_deltas = std_deltas
+        self.Individual_cfg = individual_cfg
+        self.group_partitions = group_partitions
+        self.initialize_population(time_log)
+        self.evaluate_fitness()
+
+    def evaluate_fitness(self):
+        for cur_chromosome in self.R:
+            # make measurement
+            cur_chromosome.measure()
+            # Convert bit string to operation based representation
+            cur_chromosome.convert_permutation()
+            # Create schedule to evaluate fitness
+            cur_chromosome.create_schedule(
+                self.decoding_method, 
+                self.jssp_problem,
+                self.activate_schedule
+            )
+        # Fintess values are available as self.R[i].schedule.max_completion_time
+
+    def initialize_population(self, time_log: bool=False):
+        """Method for populating the population with individuals. Generates random qubit chromosomes.
+
+        Parameters
+        ----------
+        time_log : bool, optional
+            Logging durations of different components in representation, by default False
+        """
+        # P is index 0 - N-1, while Q is index N - 2N
+        cur_individual_type = eval(self.individual_type)
+        self.R = np.empty(2*self.N, dtype=cur_individual_type)
+        for i in range(len(self.R)):
+            self.R[i] = cur_individual_type(self.n_jobs, self.n_machines, self.Individual_cfg, time_log=time_log)
+
+    def execute_quantum_update(self, c: int, c_tot: int):
+        """This method is used to perform recombination for the QMEA algorithm
+            
+        Parameters
+        ----------
+        c : int
+            The current generation number
+        c_tot : int
+            The total generation to run
+
+        Raises
+        ------
+        Exception
+            The groups of solutions should contains more solutions than 0.
+        """
+        population_size = self.N*2*(1-self.reset_fraction)
+        # Divide the parents into equal groups
+        S = int(np.floor(population_size/self.group_partitions))
+        if S <= 0:
+            raise Exception("The groups of solutions should contains more solutions than 0. Please adjust the n_groups parameter.")
+        
+        group = np.arange(1, self.group_partitions, 1)*S
+        for g in group:
+            for s in range(S):
+                # For each solution in the best group, use it to rotate the solution
+                # Solutions in other groups are given by S*group + s
+                self.R[g + s].rotate(self.R[s], c=c, c_tot=c_tot, n_groups=self.group_partitions, cur_group=g, rotation_angles=self.rotation_angles, std_deltas=self.std_deltas)
+
+        # Reset remaining solutions
+        reset_index = int(self.N*2*(1-self.reset_fraction))
+        for remaining in self.R[reset_index:]:
+            remaining.initialize_individual()
+
+        # Set the genes of the best group
+        for s in range(S):
+            self.R[s].positions = self.R[s].random_keys
+            self.R[s].standard_deviations = np.zeros_like(self.R[s].random_keys)
+
+        # Reset individuals that are duplicated
+        cur_range = self.get_front_range(0)
+        front_indexes = np.arange(cur_range[0], cur_range[1]).tolist()
+        while len(front_indexes) > 0:
+            cur_makespan, cur_flow = self.R[front_indexes[0]].cur_fitness
+            temp_front_indexes = []
+            for j in range(1, len(front_indexes)):
+                comp_makespan, comp_flow = self.R[front_indexes[j]].cur_fitness
+                if cur_makespan == comp_makespan and cur_flow == comp_flow:
+                    # Reset the duplicate to initial positions
+                    self.R[front_indexes[j]].initialize_individual()
                     temp_front_indexes.append(j)
                     
 
