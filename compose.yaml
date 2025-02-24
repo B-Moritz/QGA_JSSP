@@ -26,7 +26,7 @@ services:
   qga_improv_rnadom_key:
     build:
       context: .
-      volumes:
-        - ./logdata_2:/QGA_JSSP/logdata_2
-      cpuset: "2"
-      command: ./run_improved_random_key.bash
+    volumes:
+      - ./logdata_2:/QGA_JSSP/logdata_2
+    cpuset: "2"
+    command: ./run_improved_random_key.bash
