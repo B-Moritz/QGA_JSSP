@@ -58,7 +58,7 @@ def run_experiment(cfg: DictConfig):
             raise Exception(f"Log file already exists: {cur_log_file_name}")
     
         for problem_name in cfg.experiment.problem_names:
-            # For each problemname defined in the config run each candidate with a certain repetition
+            # For each problem name defined in the config run each candidate with a certain repetition
             cur_n_machines = test_benchmark_collection.benchmark_collection[problem_name]['n_machines']
             cur_n_jobs = test_benchmark_collection.benchmark_collection[problem_name]['n_jobs']
             cur_jssp_problem = test_benchmark_collection.benchmark_collection[problem_name]['problem_matrix']

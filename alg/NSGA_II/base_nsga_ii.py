@@ -199,7 +199,7 @@ class ClassicalNSGAII(JsspAlgorithm):
         self.pop_object.crowding_distance_sort_all_fronts()
         max_iteration = self.n_iterations
         while self.n_iterations > 0:
-            # higher tournament size -> more elitism, smaller torunament size -> less elitism
+            # Higher tournament size -> more elitism, smaller torunament size -> less elitism
             self.pop_object.select_parents()
             self.pop_object.execute_recombination()
 

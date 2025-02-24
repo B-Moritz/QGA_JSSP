@@ -5,7 +5,7 @@ experiment:
     repetitions: 10
     n_iterations: 150
     problem_names: ["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"]
-    dump_population: True
+    dump_population: False
 
 
 quantum_hash_base_encoding: 

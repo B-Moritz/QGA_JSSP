@@ -2,7 +2,7 @@
 import pdb
 
 from base_nsga_ii import JsspAlgorithm
-from nsga_population import QMEAPopulation
+from nsga_population import QMEAPopulation, EnhancedQMEAPopulation
 from omegaconf import DictConfig
 
 import numpy as np

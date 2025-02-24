@@ -4,7 +4,7 @@ defaults:
 experiment:
     repetitions: 10
     n_iterations: 150
-    problem_names: ["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"]
+    problem_names: ["ft10"] #["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"]
     experiment_id: 2
     dump_population: False
             

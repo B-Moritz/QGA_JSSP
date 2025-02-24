@@ -3,8 +3,8 @@ defaults:
 
 experiment:
     repetitions: 1
-    n_iterations: 10
-    problem_names: ['ft20']
+    n_iterations: 150
+    problem_names: ['ft10']
 
 classical:
     _target_: base_nsga_ii.ClassicalNSGAII
