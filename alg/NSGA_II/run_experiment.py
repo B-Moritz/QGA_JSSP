@@ -16,7 +16,7 @@ log_columns += f"Max Mean Flow Time,Avg Mean Flow Time,Spread,N Fronts,N Non-dom
 
 @hydra.main(version_base=None, config_name="experiment", config_path="conf")
 def run_experiment(cfg: DictConfig):
-    test_benchmark_collection = BenchmarkCollection(make_web_request=False)
+    test_benchmark_collection = BenchmarkCollection(reload_benchmarks=False)
 
     if cfg.experiment.checkpoint.continue_from_chekcpoint:
         # Use existing log folder

@@ -136,7 +136,7 @@ def run_algorithm(cfg: DictConfig):
 
 #@exception_handler
 def algorithm_thread(cfg: DictConfig, continue_flag, shared_obj):
-    test_benchmark_collection = BenchmarkCollection(make_web_request=False)
+    test_benchmark_collection = BenchmarkCollection(reload_benchmarks=False)
     # Create the list of candidate algorithms
     candidate_list = dir(cfg)
     candidate_list.remove("experiment")

@@ -1,3 +1,7 @@
 python .\alg\NSGA_II\run_experiment.py -cn experiment_1_hash_base.yaml
 
 python run_algorithm.py -cn experiment_1_hash_base.yaml
+
+
+Running docer compose with logging
+sudo docker compose up --build 2> compose_error_log.txt > compose_log.txt
