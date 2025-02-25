@@ -22,15 +22,20 @@ import pdb
 class BenchmarkCollection:
     """ This class is used to extract, store and visualize the OR library JSSP Benchmars."""
 
-    def __init__(self, make_web_request: bool=False, url: str="https://people.brunel.ac.uk/~mastjjb/jeb/orlib/files/jobshop1.txt", file_path=""):
+    def __init__(self, reload_benchmarks: bool=False, url: str="https://people.brunel.ac.uk/~mastjjb/jeb/orlib/files/jobshop1.txt", file_path="", taillard_path=""):
         self.url = url
 
         self.cache_path = os.path.join(os.path.dirname(__file__), "jssp_benchmarks.json")
         
-        if make_web_request:
+        if reload_benchmarks:
             # Collection raw data and parse the benchmarks
             self.collect_from_web()
             self.parse_benchmarks()
+            
+            if taillard_path != "":
+                # Add the Taillard benchmarks if location is given
+                self.collect_local_taillard_files(taillard_path)
+
             self.save_json()
         else:
             if os.path.exists(self.cache_path):
@@ -70,6 +75,36 @@ class BenchmarkCollection:
             raise Exception("Request responded with error message " + resp.status_code + ": " + resp.reason)
 
         self.raw_text = text_data
+
+    def collect_local_taillard_files(self, location: str):
+        file_list = os.listdir(location)
+        for f in file_list:
+            if f[:2] == 'ta':
+                cur_path = os.path.join(location, f)
+                with open(cur_path, "r") as cur_file:
+                    cur_file_content = cur_file.readlines()
+
+                n_jobs, n_machines = cur_file_content[0].strip().split(" ")
+                prob_matrix = np.empty((2, int(n_jobs), int(n_machines)), dtype=int)
+
+                for j, job_seq in enumerate(cur_file_content[1:]):
+                    cur_raw_seq = re.split("\s+", job_seq.strip())
+                    for k in range(0, len(cur_raw_seq), 2):
+                        # Extract the mahcine number and duration and store it in benchmark matrix
+                        if cur_raw_seq[k] == "":
+                            print("Error")
+                            
+                        prob_matrix[0][j][int(k/2)] = int(cur_raw_seq[k]) 
+                        prob_matrix[1][j][int(k/2)] = int(cur_raw_seq[k+1])
+
+                # Create benchmark object and add it to benchmark collection
+                self.benchmark_collection[f] = {
+                        "name" : f,
+                        "description" : f"Taillard {f[-2:]}",
+                        "problem_matrix" : prob_matrix, 
+                        "n_jobs" : int(n_jobs),
+                        "n_machines" : int(n_machines)
+                    }
 
     def parse_benchmarks(self):
         """This method is used to parse the raw text file collected from web"""
@@ -125,7 +160,8 @@ class BenchmarkCollection:
             print("\n+++++++++++++++++++++++++++++\n\n")
 
 if __name__=="__main__":
-    test_benchmark_collection = BenchmarkCollection(make_web_request=True)
+    cur_taillar_path = 'C:\\Users\\b-mor\\Downloads\\Job_Shop_Scheduling_Benchmark_Environments_and_Instances-main\\Job_Shop_Scheduling_Benchmark_Environments_and_Instances-main\\data\\jsp\\taillard'
+    test_benchmark_collection = BenchmarkCollection(reload_benchmarks=True, taillard_path=cur_taillar_path)
     test_benchmark_collection.print_benchmarks()
 
     
