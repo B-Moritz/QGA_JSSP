@@ -19,6 +19,7 @@ quantum_position_encoding_restricted:
         reset_fraction: 0 # Clip the bottom quarter -> reset chromosomes back to 50/50
         activate_schedule: True
         decoding_method: "apply_operation_based_bierwirth"
+        objectives: ["Makespan", "Mean Completion Time"]
         individual_type: QChromosomePositionEncoding
         time_log: False
         rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]" #"[0.2*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.2*np.pi, 0]" #"[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"

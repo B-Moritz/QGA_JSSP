@@ -65,7 +65,6 @@ class Node:
         # Helper method for adding the reference to the next list node
         self.next_node = next_node
     
-
 class LinkedList:
     """Limited implementation of the linked list suited specially for the GOX algorithm used in the classical NSGA-II implementation
     """
@@ -241,19 +240,17 @@ class LinkedList:
         # hook method to support len()
         return self.length
 
-
-
 class Population:
     # Consists of the parent and ofspring population P_t and Q_t to form the full population R_t
-    def __init__(self, 
-                 N: int, 
-                 decoding_method: str, 
-                 n_jobs: int, 
-                 n_machines: int, 
+    def __init__(self,
+                 N: int,
+                 decoding_method: str,
+                 n_jobs: int,
+                 n_machines: int,
                  jssp_problem: np.ndarray,
                  activate_schedule: bool = False,
                  time_log: bool=False,
-                 objectives: List[str] = ["max_completion_time", "mean_flow_time"],
+                 objectives: List[str] = ["Makespan", "Mean Flow Time"],
                  population_array: np.ndarray = np.array([])
                 ):
         
@@ -287,7 +284,7 @@ class Population:
     def non_dominated_sorting(self):
         # Sort the entire population
         self.front_start_index: List = [] # Contains start index for each front
-        cur_start = 0
+        cur_start = 0 # start of current front
         cur_swap_index = 0
         while cur_start < self.N:
             for i in range(cur_start, len(self.R)):
@@ -324,7 +321,6 @@ class Population:
         self.front_start_index.append(cur_start)
 
 
-
     def get_front_range(self, i: int) -> List:
         """This method returns the indices for the current front i.
 
@@ -339,11 +335,12 @@ class Population:
         """
         if i + 1 >= len(self.front_start_index):
             # Handeling the last front - rest of the population
-            return([self.N, 2*self.N, self.N])
-        if i + 2 >= len(self.front_start_index):
+            cur_length = 2*self.N - self.front_start_index[i]
+            return([self.front_start_index[i], 2*self.N, cur_length])
+        #if i + 2 >= len(self.front_start_index):
             # Handeling the second to last front
-            cur_length = self.N - self.front_start_index[i]
-            return([self.front_start_index[i], self.N, cur_length])
+        #    cur_length = self.N - self.front_start_index[i]
+        #    return([self.front_start_index[i], self.N, cur_length])
         else:
             cur_length = self.front_start_index[i+1] - self.front_start_index[i]
             return([self.front_start_index[i], self.front_start_index[i+1], cur_length])
@@ -362,8 +359,8 @@ class Population:
             cur_spread, cur_length = self.calculate_spread_euclidian(is_last_iteration)
 
         cur_range = self.get_front_range(0)
-        result = {"Makespan": {"Avg" : 0, "Min": np.inf, "Max" : 0}, 
-                  "Mean flow time": {"Avg" : 0, "Min": np.inf, "Max" : 0}, 
+        result = {self.objectives[0] : {"Avg" : 0, "Min": np.inf, "Max" : 0}, 
+                  self.objectives[1] : {"Avg" : 0, "Min": np.inf, "Max" : 0}, 
                   "Spread" : cur_spread, 
                   "n_fronts" : len(self.front_start_index),
                   "n_non_dominated_solutions" : cur_length
@@ -371,25 +368,25 @@ class Population:
         
         for i in range(cur_range[1]):
             # Find avg makespan
-            result["Makespan"]["Avg"] += self.R[i].schedule.max_completion_time
+            result[self.objectives[0]]["Avg"] += self.R[i].cur_fitness[0]
             # Find minimum makespan
-            if result["Makespan"]["Min"] > self.R[i].schedule.max_completion_time:
-                result["Makespan"]["Min"] = self.R[i].schedule.max_completion_time
+            if result[self.objectives[0]]["Min"] > self.R[i].cur_fitness[0]:
+                result[self.objectives[0]]["Min"] = self.R[i].cur_fitness[0]
             # Find maximum makespan
-            if result["Makespan"]["Max"] < self.R[i].schedule.max_completion_time:
-                result["Makespan"]["Max"] = self.R[i].schedule.max_completion_time
+            if result[self.objectives[0]]["Max"] < self.R[i].cur_fitness[0]:
+                result[self.objectives[0]]["Max"] = self.R[i].cur_fitness[0]
 
             # Find avg mean flow time
-            result["Mean flow time"]["Avg"] += self.R[i].schedule.mean_flow_time
+            result[self.objectives[1]]["Avg"] += self.R[i].cur_fitness[1]
             # Find minimum mean flow time
-            if result["Mean flow time"]["Min"] > self.R[i].schedule.mean_flow_time:
-                result["Mean flow time"]["Min"] = self.R[i].schedule.mean_flow_time
+            if result[self.objectives[1]]["Min"] > self.R[i].cur_fitness[1]:
+                result[self.objectives[1]]["Min"] = self.R[i].cur_fitness[1]
             # Find maximum mean flow time
-            if result["Mean flow time"]["Max"] < self.R[i].schedule.max_completion_time:
-                result["Mean flow time"]["Max"] = self.R[i].schedule.max_completion_time
+            if result[self.objectives[1]]["Max"] < self.R[i].cur_fitness[1]:
+                result[self.objectives[1]]["Max"] = self.R[i].cur_fitness[1]
 
-        result["Makespan"]["Avg"] = result["Makespan"]["Avg"] / cur_range[2]
-        result["Mean flow time"]["Avg"] = result["Mean flow time"]["Avg"] / cur_range[2]
+        result[self.objectives[0]]["Avg"] = result[self.objectives[0]]["Avg"] / cur_range[2]
+        result[self.objectives[1]]["Avg"] = result[self.objectives[1]]["Avg"] / cur_range[2]
         return result
 
     def calculate_spread_euclidian(self, is_last_iteration=False):
@@ -411,7 +408,7 @@ class Population:
                 cur_keep_individual = self.nd_front_crowding_distance[counter]
                 k = counter+1
                 for indiv in self.nd_front_crowding_distance[counter+1:]:
-                    if indiv["makespan"] == cur_keep_individual["makespan"] and indiv["mean flow time"] == cur_keep_individual["mean flow time"]:
+                    if indiv[self.objectives[0]] == cur_keep_individual[self.objectives[0]] and indiv[self.objectives[1]] == cur_keep_individual[self.objectives[1]]:
                         self.nd_front_crowding_distance = np.delete(self.nd_front_crowding_distance, k)
                     else:
                         k += 1
@@ -430,7 +427,7 @@ class Population:
         # Note that the optimal pareto front is not known in this case and the extremes are set to 0 for both objectives.
         # As a result the distance is the minimum value for the metrics. 
         # If d_extreme -> 0, we now that the pareto fron covers the optimal front in bredth
-        d_extreme = self.nd_front_crowding_distance["makespan"].min() + self.nd_front_crowding_distance["mean flow time"].min() #np.sqrt(d_extreme)
+        d_extreme = self.nd_front_crowding_distance[self.objectives[0]].min() + self.nd_front_crowding_distance[self.objectives[1]].min() #np.sqrt(d_extreme)
         # Initializing the total distance value
         di_sum = 0
         # List of distances
@@ -438,11 +435,11 @@ class Population:
         counter = 0
         
         # Now each successive distance between solutions in the non-dominated set is found
-        self.nd_front_crowding_distance["makespan"].sort()
+        self.nd_front_crowding_distance[self.objectives[0]].sort()
         for i in range(1, len(self.nd_front_crowding_distance)):
             # For each solution in the pareto front
-            di = (self.nd_front_crowding_distance["makespan"][i] - self.nd_front_crowding_distance["makespan"][i-1])**2
-            di += (self.nd_front_crowding_distance["mean flow time"][i] - self.nd_front_crowding_distance["mean flow time"][i-1])**2
+            di = (self.nd_front_crowding_distance[self.objectives[0]][i] - self.nd_front_crowding_distance[self.objectives[0]][i-1])**2
+            di += (self.nd_front_crowding_distance[self.objectives[1]][i] - self.nd_front_crowding_distance[self.objectives[1]][i-1])**2
             di = np.sqrt(di)
             di_list[i-1] = di
             di_sum += di
@@ -467,8 +464,8 @@ class Population:
         # Two metrics: one with crowding distance and one with the euclidian distance between objective functions
         # The crowding distance of the non dominated front is stored in self.crowding_distance_data
         # 1. find the extremal distances
-        d_extreme = self.nd_front_crowding_distance["makespan"].max() - self.nd_front_crowding_distance["makespan"].min() 
-        d_extreme += self.nd_front_crowding_distance["mean flow time"].max() - self.nd_front_crowding_distance["mean flow time"].min()
+        d_extreme = self.nd_front_crowding_distance[self.objectives[0]].max() - self.nd_front_crowding_distance[self.objectives[0]].min() 
+        d_extreme += self.nd_front_crowding_distance[self.objectives[1]].max() - self.nd_front_crowding_distance[self.objectives[1]].min()
         # 2. Find the mean of the distnace values
         d_mean = self.nd_front_crowding_distance["cd"].mean()
         di_sum = np.sum(self.nd_front_crowding_distance["cd"] - d_mean)
@@ -524,7 +521,7 @@ class Population:
 
         # Sort on distance
         order_list.sort(key=lambda x: x[-1], reverse=True)
-        # Reflect the new order on the population    
+        # Reflect the new order on the population
         temp_R = np.empty(range_len, dtype=Individual)
         for i, k in enumerate(order_list):
             temp_R[i] = self.R[cur_range[0] + k[0]]
@@ -541,17 +538,17 @@ class Population:
         # As a result the last front is sorted and the population is ready for parent selection and recombination
         #cur_range = self.start_stop_fronts[-1]
         range_len = cur_range[2]
-        dtype_list = [("position", int), ("makespan", int), ("mean flow time", float), ("cd", float)]
+        dtype_list = [("position", int), (self.objectives[0], int), (self.objectives[1], float), ("cd", float)]
         order_list = np.empty(range_len,  dtype=dtype_list)
         # Create the order list - contains list of position in R and the objective values
         for i, individual in enumerate(self.R[cur_range[0] : cur_range[1]]):
             # Add the inherent position of the current solution
-            order_list[i] = (i, individual.schedule.max_completion_time, individual.schedule.mean_flow_time, 0)
+            order_list[i] = (i, individual.cur_fitness[0], individual.cur_fitness[1], 0)
             
 
         if len(order_list) > 2:
             # Sort on makespan
-            order_list.sort(order="makespan")
+            order_list.sort(order=self.objectives[0])
             # Set boundaries to infinity
             order_list["cd"][0] = np.inf
             order_list["cd"][-1] = np.inf
@@ -559,14 +556,14 @@ class Population:
             pre_individual_index = np.arange(0, len(order_list)-2)
             post_indvidual_index = np.arange(2, len(order_list))
 
-            cd_denominator = (order_list["makespan"][-1] - order_list["makespan"][0])
+            cd_denominator = (order_list[self.objectives[0]][-1] - order_list[self.objectives[0]][0])
             if cd_denominator == 0:
                 order_list["cd"][1:-1] = 0
             else:    
-                order_list["cd"][1:-1] += (order_list["makespan"][post_indvidual_index] - order_list["makespan"][pre_individual_index])/cd_denominator
+                order_list["cd"][1:-1] += (order_list[self.objectives[0]][post_indvidual_index] - order_list[self.objectives[0]][pre_individual_index])/cd_denominator
             
             # Sort on mean flow time
-            order_list.sort(order="mean flow time")
+            order_list.sort(order=self.objectives[1])
             # Set boundaries to infinity
             order_list["cd"][0] = np.inf
             order_list["cd"][-1] = np.inf
@@ -574,12 +571,12 @@ class Population:
             pre_individual_index = np.arange(0, len(order_list)-2)
             post_indvidual_index = np.arange(2, len(order_list))
 
-            cd_denominator = (order_list["mean flow time"][-1] - order_list["mean flow time"][0])
+            cd_denominator = (order_list[self.objectives[1]][-1] - order_list[self.objectives[1]][0])
             if cd_denominator == 0:
                 # If all solutions are similar in fitness the cd denominator is 0. This is handled by setting all values to infinity
                 order_list["cd"][1:-1] = 0
             else:    
-                order_list["cd"][1:-1] += (order_list["mean flow time"][post_indvidual_index] - order_list["mean flow time"][pre_individual_index])/cd_denominator
+                order_list["cd"][1:-1] += (order_list[self.objectives[1]][post_indvidual_index] - order_list[self.objectives[1]][pre_individual_index])/cd_denominator
         else:
             order_list["cd"][0] = np.inf
             order_list["cd"][-1] = np.inf
@@ -609,22 +606,23 @@ class Population:
                 
         return point_list #[point_list, color_list]
 
-
 class ClassicalPopulation(Population):
 
     def __init__(self,
                  N: int, 
                  decoding_method: str,
-                 n_jobs,
-                 n_machines,
-                 jssp_problem,
-                 activate_schedule,
+                 objectives: list,
+                 n_jobs: int,
+                 n_machines: int,
+                 jssp_problem: np.ndarray,
+                 activate_schedule: bool,
                  tournament_size: int,
                  mating_pool_size: int,
                  mutation_probability: float
 
             ):
-        super().__init__(N, decoding_method, n_jobs, n_machines, jssp_problem, activate_schedule)
+        super().__init__(N, decoding_method, n_jobs, n_machines, jssp_problem, activate_schedule, objectives=objectives)
+        self.objectives = objectives
         self.tournament_size = tournament_size
         self.mating_pool_size = mating_pool_size
         self.mutation_probability = mutation_probability
@@ -638,7 +636,7 @@ class ClassicalPopulation(Population):
         # P is index 0 - N-1, while Q is index N - 2N
         self.R = np.empty(2*self.N, dtype=Individual)
         for i in range(len(self.R)):
-            self.R[i] = PermutationChromosome.create_permutation_chromosome(self.n_jobs, self.n_machines)
+            self.R[i] = PermutationChromosome.create_permutation_chromosome(self.n_jobs, self.n_machines, self.objectives)
 
 
     def evaluate_fitness(self):
@@ -649,7 +647,7 @@ class ClassicalPopulation(Population):
                 self.jssp_problem,
                 self.activate_schedule
             )
-        # Fintess values are available as self.R[i].schedule.max_completion_time
+        # Fintess values are available as self.R[i].cur_fitness
 
     def select_parents(self):
         """This method performs k-tournament selection to obtain all parents needed for the mating pool.
@@ -787,13 +785,14 @@ class ClassicalPopulation(Population):
             linked_receiver.insert_nodes(donator[start_range:stop_range], insert_after_node)
 
         child_chromosome = linked_receiver.to_ndarray()
-        return PermutationChromosome(child_chromosome, self.n_jobs, self.n_machines)
+        return PermutationChromosome(child_chromosome, self.n_jobs, self.n_machines, self.objectives)
 
 class QMEAPopulation(Population):
     def __init__(self,
                  N: int,
                  reset_fraction: float,
                  decoding_method: str,
+                 objectives: list,
                  n_jobs: int,
                  n_machines: int,
                  jssp_problem: np.ndarray,
@@ -804,8 +803,9 @@ class QMEAPopulation(Population):
                  time_log: bool=False,
                  individual_type="QChromosomeBaseEncoding"
         ):
-        super().__init__(N, decoding_method, n_jobs, n_machines, jssp_problem, activate_schedule, time_log)
+        super().__init__(N, decoding_method, n_jobs, n_machines, jssp_problem, activate_schedule, time_log, objectives=objectives)
         self.individual_type = individual_type
+        self.objectives = objectives
         self.reset_fraction = reset_fraction
         self.rotation_angles = rotation_angles
         self.Individual_cfg = individual_cfg
@@ -839,7 +839,7 @@ class QMEAPopulation(Population):
         cur_individual_type = eval(self.individual_type)
         self.R = np.empty(2*self.N, dtype=cur_individual_type)
         for i in range(len(self.R)):
-            self.R[i] = cur_individual_type(self.n_jobs, self.n_machines, self.Individual_cfg, time_log=time_log)
+            self.R[i] = cur_individual_type(self.n_jobs, self.n_machines, self.Individual_cfg, self.objectives, time_log=time_log)
 
     def execute_quantum_update(self, c: int, c_tot: int):
         """This method is used to perform recombination for the QMEA algorithm
@@ -898,12 +898,12 @@ class QMEAPopulation(Population):
 
             front_indexes = temp_front_indexes
 
-
 class EnhancedQMEAPopulation(Population):
     def __init__(self,
                  N: int,
                  reset_fraction: float,
                  decoding_method: str,
+                 objectives: list,
                  n_jobs: int,
                  n_machines: int,
                  jssp_problem: np.ndarray,
@@ -915,8 +915,9 @@ class EnhancedQMEAPopulation(Population):
                  time_log: bool=False,
                  individual_type="EnhancedQuantumRandomKeyIndividual"
         ):
-        super().__init__(N, decoding_method, n_jobs, n_machines, jssp_problem, activate_schedule, time_log)
+        super().__init__(N, decoding_method, n_jobs, n_machines, jssp_problem, activate_schedule, time_log, objectives=objectives)
         self.individual_type = individual_type
+        self.objectives = objectives
         self.reset_fraction = reset_fraction
         self.rotation_angles = rotation_angles
         self.std_deltas = std_deltas
@@ -951,7 +952,7 @@ class EnhancedQMEAPopulation(Population):
         cur_individual_type = eval(self.individual_type)
         self.R = np.empty(2*self.N, dtype=cur_individual_type)
         for i in range(len(self.R)):
-            self.R[i] = cur_individual_type(self.n_jobs, self.n_machines, self.Individual_cfg, time_log=time_log)
+            self.R[i] = cur_individual_type(self.n_jobs, self.n_machines, self.Individual_cfg, self.objectives, time_log=time_log)
 
     def execute_quantum_update(self, c: int, c_tot: int):
         """This method is used to perform recombination for the QMEA algorithm

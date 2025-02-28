@@ -4,7 +4,7 @@ defaults:
 experiment:
     repetitions: 10
     n_iterations: 150
-    problem_names: ["la21", "la22", "la23", "la24", "la25", "la26", "la27", "la29"] #["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"]
+    problem_names: ["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"] # ["la21", "la22", "la23", "la24", "la25", "la26", "la27", "la29"]
     dump_population: False
 
 classical:
@@ -15,6 +15,7 @@ classical:
         _target_: base_nsga_ii.ClassicalPopulation
         N: 50
         decoding_method: "apply_operation_based_bierwirth"
+        objectives: ["Makespan", "Mean Flow Time"]
         activate_schedule: True
         tournament_size: 2
         mating_pool_size: 50

@@ -10,9 +10,6 @@ from base_nsga_ii import ClassicalNSGAII
 from qmea import QMEA
 from or_benchmark import BenchmarkCollection
 
-log_columns = f"Problem,Candidate,Repetition,Iteration,Time,"
-log_columns += f"Min Makespan,Max Makespan,Avg Makespan,Min Mean Flow Time,"
-log_columns += f"Max Mean Flow Time,Avg Mean Flow Time,Spread,N Fronts,N Non-dominated solutions"
 
 @hydra.main(version_base=None, config_name="experiment", config_path="conf")
 def run_experiment(cfg: DictConfig):
@@ -46,8 +43,16 @@ def run_experiment(cfg: DictConfig):
     candidate_list = dir(cfg)
     candidate_list.remove("experiment")
 
+
+
     for candidate in candidate_list:
+        # Extract objectives
+        objective_1, objective_2 = eval(f"cfg.{candidate}.pop_object.objectives") 
         # Create log file
+        log_columns = f"Problem,Candidate,Repetition,Iteration,Time,"
+        log_columns += f"Min {objective_1},Max {objective_1},Avg {objective_1},Min {objective_2},"
+        log_columns += f"Max {objective_2},Avg {objective_2},Spread,N Fronts,N Non-dominated solutions"
+
         cur_log_file_name = os.path.join(log_path, f"{candidate}_{cfg.experiment.experiment_id}.csv")
         if not os.path.exists(cur_log_file_name):
             # Creating the log file
@@ -97,8 +102,8 @@ def run_experiment(cfg: DictConfig):
                     time_since_start = time.time() - cur_start_time
                     with open(cur_log_file_name, "a") as log_file:
                         log_line = f"{problem_name},{candidate},{i},{iteration_data['Iteration']},{time_since_start:.4f},"
-                        log_line += f"{iteration_data['Makespan']['Min']},{iteration_data['Makespan']['Max']},{iteration_data['Makespan']['Avg']},"
-                        log_line += f"{iteration_data['Mean flow time']['Min']},{iteration_data['Mean flow time']['Max']},{iteration_data['Mean flow time']['Avg']},"
+                        log_line += f"{iteration_data[objective_1]['Min']},{iteration_data[objective_1]['Max']},{iteration_data[objective_1]['Avg']},"
+                        log_line += f"{iteration_data[objective_2]['Min']},{iteration_data[objective_2]['Max']},{iteration_data[objective_2]['Avg']},"
                         log_line += f"{iteration_data['Spread']},{iteration_data['n_fronts']},{iteration_data['n_non_dominated_solutions']}"
                         log_file.write(log_line + "\n")
 

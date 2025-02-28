@@ -21,10 +21,6 @@ from base_nsga_ii import ClassicalNSGAII
 from qmea import QMEA
 from or_benchmark import BenchmarkCollection
 
-log_columns = f"Problem,Candidate,Repetition,Iteration,Time,"
-log_columns += f"Min Makespan,Max Makespan,Avg Makespan,Min Mean Flow Time,"
-log_columns += f"Max Mean Flow Time,Avg Mean Flow Time,Spread,N Fronts,N Non-dominated solutions"
-
 class SharedPopulation:
     pop_object = None
     iteration_counter = 0
@@ -48,6 +44,7 @@ def update_objective_space_plot(frames, ax, shared_obj):
 
     minimum_opacity: float = 0.5
     color_mapper: str = "cm.inferno"
+    
 
     if shared_obj.pop_object:
         ax.clear()
@@ -142,6 +139,12 @@ def algorithm_thread(cfg: DictConfig, continue_flag, shared_obj):
     candidate_list.remove("experiment")
 
     for candidate in candidate_list:
+        # Extract objectives
+        objective_1, objective_2 = eval(f"cfg.{candidate}.pop_object.objectives") 
+        # Create log file
+        log_columns = f"Problem,Candidate,Repetition,Iteration,Time,"
+        log_columns += f"Min {objective_1},Max {objective_1},Avg {objective_1},Min {objective_2},"
+        log_columns += f"Max {objective_2},Avg {objective_2},Spread,N Fronts,N Non-dominated solutions"
     
         for problem_name in cfg.experiment.problem_names:
             # For each problemname defined in the config run each candidate with a certain repetition

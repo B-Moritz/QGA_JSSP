@@ -35,8 +35,9 @@ class JsspAlgorithm:
 
     
     def print_performance(self, cur_result: dict):
-        print(f"{cur_result['Iteration']} : Makespan: [min : {cur_result['Makespan']['Min']:.2f}, avg : {cur_result['Makespan']['Avg']:.2f}], " + \
-            f"Mean flow time: [min : {cur_result['Mean flow time']['Min']:.2f}, avg : {cur_result['Mean flow time']['Avg']:.2f}], " + \
+        objective_1, objective_2, *_ =  list(cur_result)
+        print(f"{cur_result['Iteration']} : {objective_1}: [min : {cur_result[objective_1]['Min']:.2f}, avg : {cur_result[objective_1]['Avg']:.2f}], " + \
+            f"{objective_2}: [min : {cur_result[objective_2]['Min']:.2f}, avg : {cur_result[objective_2]['Avg']:.2f}], " + \
                 f"Spread : {cur_result['Spread']}, n_fronts: {cur_result['n_fronts']}, n_non_dominated_solutions: {cur_result['n_non_dominated_solutions']}")
     
     def dump_population(self, dump_folder, file_name):
@@ -150,8 +151,8 @@ class JsspAlgorithm:
         ax.set_title(figure_name)
         #ax.set_xticks(np.linspace(np.min(point_list[:, 0])-10, np.max(point_list[:, 0])+10, 10))
         #ax.set_yticks(np.linspace(np.min(point_list[:, 1])-10, np.max(point_list[:, 1])+10, 10))
-        ax.set_xlabel("Makespan")
-        ax.set_ylabel("Mean Flow Time")
+        ax.set_xlabel(self.pop_object.objectives[0])
+        ax.set_ylabel(self.pop_object.objectives[1])
         
         fig.savefig(os.path.join(img_folder, figure_name))
         plt.close()
@@ -198,6 +199,12 @@ class ClassicalNSGAII(JsspAlgorithm):
         self.pop_object.non_dominated_sorting()
         self.pop_object.crowding_distance_sort_all_fronts()
         max_iteration = self.n_iterations
+
+        previous_makespan_min = np.inf
+        previous_flow_min = np.inf
+        cur_makespan_ind = None
+        cur_flow_ind = None
+
         while self.n_iterations > 0:
             # Higher tournament size -> more elitism, smaller torunament size -> less elitism
             self.pop_object.select_parents()
@@ -213,6 +220,31 @@ class ClassicalNSGAII(JsspAlgorithm):
             cur_result["Iteration"] = max_iteration - self.n_iterations
             self.print_performance(cur_result)
             
+            # Debug help
+            #cur_min_makespan = cur_result["Makespan"]["Min"]
+            #cur_min_mean_flow_time = cur_result["Mean Completion Time"]["Min"]
+            #if cur_min_makespan > previous_makespan_min or cur_min_mean_flow_time > previous_flow_min:
+            #    print("----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+            #    self.pop_object.non_dominated_sorting()
+            #    self.pop_object.crowding_distance_sort_all_fronts()
+                
+            #min_makespan_found = False
+            #min_mean_flow_time_found = False
+            #for indiv in self.pop_object.R:
+            #    if not min_makespan_found and indiv.cur_fitness[0] == cur_min_makespan:
+            #        min_makespan_found = True
+            #        indiv.watch_individual = True
+            #        cur_makespan_ind = indiv
+            #    elif not min_mean_flow_time_found and indiv.cur_fitness[1] == cur_min_mean_flow_time:
+            #        min_mean_flow_time_found = True
+            #        indiv.watch_individual = True
+            #        cur_flow_ind = indiv
+            #    else:
+            #        indiv.watch_individual = False
+            
+            #previous_makespan_min = cur_min_makespan
+            #previous_flow_min = cur_min_mean_flow_time
+
             if self.activate_logging:
                 # The method will act as generator if logging is active
                 yield cur_result

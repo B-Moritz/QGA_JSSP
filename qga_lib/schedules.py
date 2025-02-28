@@ -13,7 +13,8 @@ from matplotlib import colormaps
 import matplotlib as mpl
 
 class Schedule:
-    def __init__(self, operation_list: List[Operation], n_jobs: int, n_machines: int, jssp_problem: np.ndarray):
+
+    def __init__(self, operation_list: List[Operation], n_jobs: int, n_machines: int, jssp_problem: np.ndarray, objective_1: str, objective_2: str):
         # A schedule consists of a list of operations where each operation has a start time and a duration as, 
         # well as a machine and job assigned to itself
         self.operation_list: List[Operation] = operation_list
@@ -21,6 +22,23 @@ class Schedule:
         self.n_machines: int = n_machines
         self.n_jobs: int = n_jobs
         self.jssp_problem: np.ndarray = jssp_problem
+        # Determine the two objectives
+        self.objective_dicts = {
+                                "Makespan" : self.get_makespan, 
+                                "Mean Flow Time" : self.get_mean_flow_time, 
+                                "Mean Completion Time" : self.get_mean_completion_time
+                                }
+        if objective_1 not in self.objective_dicts.keys():
+            raise Exception(f"The provided identifier provided as objective_1 was not recognised. Provided objective: {objective_1}")
+        
+        if objective_2 not in self.objective_dicts.keys():
+            raise Exception(f"The provided identifier provided as objective_2 was not recognised. Provided objective: {objective_2}")
+        
+        self.objective_1 = self.objective_dicts[objective_1]
+        self.objective_2 = self.objective_dicts[objective_2]
+
+        
+        
 
     def activate_schedule(self):
         # Performs the Hybrid gifflar and thompson algorithm proposed by (Varela et al., 2005) and (Ripon et al., 2011)
@@ -116,13 +134,24 @@ class Schedule:
         self.mean_flow_time = sum/self.n_jobs
         return self.mean_flow_time
     
-    def get_flow_sum(self):
+    def get_mean_completion_time(self) -> float:
+        """Calculate the mean completion time. This objective should be minimized 
+
+        Returns
+        -------
+        float
+            the mean completion time
+        """
         sum = 0
-        for operation in self.operation_list:
-            sum += operation.get_completion_time()
+        for job in range(self.n_jobs):
+            # For each job find the last operations
+            for i in range(1, len(self.operation_list)+1):
+                if job == self.operation_list[-i].job:
+                    sum += self.operation_list[-i].get_completion_time()
+                    break
         
-        self.flow_sum = sum
-        return self.flow_sum
+        self.mean_completion_time = sum/self.n_jobs
+        return self.mean_completion_time
     
 
     def get_makespan(self) -> int:
@@ -210,3 +239,90 @@ class Schedule:
             plt.show()
 
         return img1
+    
+    def get_letter_code(index: int, alphabet_size: int, start_index: int) -> str:
+        """This funciton is used to create the letter code for the job identifiers
+
+        Parameters
+        ----------
+        index : int
+            The corresponding integer value of the job identifier
+        alphabet_size : int
+            THe number of different letters in the alphabet
+        start_index : int
+            The offsett index for the char. For capital letters, this value should be 65 because ord('A') -> 65
+
+        Returns
+        -------
+        str
+            The letter code for the provided job number
+        """
+        res_list = []
+        counter = 0
+        while True:
+            cur_position = alphabet_size**counter
+            rest = index % alphabet_size**(counter+1)
+            contribution = rest // cur_position
+            res_list.append(contribution)
+            if index // alphabet_size**(counter+1) == 0:
+                break
+            counter += 1
+
+        res_list.reverse()
+        letter_indexes = np.array(res_list) + start_index
+        res_str = ""
+        for letter in letter_indexes:
+            res_str += chr(letter)
+        
+        return res_str
+    
+    def get_letter_code(self, index: int, alphabet_size: int, start_index: int) -> str:
+        """This funciton is used to create the letter code for the job identifiers
+
+        Parameters
+        ----------
+        index : int
+            The corresponding integer value of the job identifier
+        alphabet_size : int
+            THe number of different letters in the alphabet
+        start_index : int
+            The offsett index for the char. For capital letters, this value should be 65 because ord('A') -> 65
+
+        Returns
+        -------
+        str
+            The letter code for the provided job number
+        """
+        res_list = []
+        counter = 0
+        while True:
+            cur_position = alphabet_size**counter
+            rest = index % alphabet_size**(counter+1)
+            contribution = rest // cur_position
+            res_list.append(contribution)
+            if index // alphabet_size**(counter+1) == 0:
+                break
+            counter += 1
+
+        res_list.reverse()
+        letter_indexes = np.array(res_list) + start_index
+        res_str = ""
+        for letter in letter_indexes:
+            res_str += chr(letter)
+        
+        return res_str
+    
+    def get_operation_code_list(self, alphabet_size=26, start_index=65) -> list:
+        str_operation_list = []
+        job_counters = np.ones(shape=self.n_jobs)
+        for operation in self.operation_list:
+            # For each operation in the schedule -> find the operation code
+            cur_job_number = operation.job
+            # Get the number of times the job already has been processed
+            cur_count = job_counters[cur_job_number]
+            # Increment the job count for later iterations
+            job_counters[cur_job_number] += 1
+            letter_code = self.get_letter_code(cur_job_number, alphabet_size, start_index)
+            str_operation_list.append(f"{letter_code}{int(cur_count)}")
+
+    

@@ -44,8 +44,10 @@ def measure_runtime(method_name: str):
 
 
 class Individual:
+    watch_individual = False
 
-    def __init__(self, n_jobs: int, n_machines: int, time_log: bool=False):
+    def __init__(self, n_jobs: int, n_machines: int, objectives: list, time_log: bool=False, watch_individual: bool=False):
+        self.watch_individual = watch_individual
         # Variables for timer components
         self.time_log = time_log
         # This dict contains the measurment for the different parts
@@ -54,13 +56,14 @@ class Individual:
         self.permutation = np.array([])
         self.n_machines: int = n_machines
         self.n_jobs: int = n_jobs
+        self.objectives = objectives
+        
     
     @measure_runtime("Create shedule")
     def create_schedule(self, 
                         method: str, 
                         jssp_problem: np.ndarray,
                         #job_permutation: np.ndarray,
-                        #objectives: List[str],
                         activate_schedule=False,
                     ):
         """This method acts as schedule builder for the individual. 
@@ -98,35 +101,40 @@ class Individual:
             jssp_problem
         )
         # Create schedule
-        self.schedule = Schedule(operation_list, self.n_jobs, self.n_machines, jssp_problem)
+        self.schedule = Schedule(operation_list, self.n_jobs, self.n_machines, jssp_problem, objective_1=self.objectives[0], objective_2=self.objectives[1])
         # Activate schedule
         if activate_schedule:
             self.schedule.activate_schedule()
 
         # Make fitness evaluations
-        self.cur_fitness = np.array([self.schedule.get_makespan(), self.schedule.get_mean_flow_time()])
+        self.cur_fitness = np.array([self.schedule.objective_1(), self.schedule.objective_2()])
+
+    def __setattr__(self, name, value):
+        if self.watch_individual:
+            print(f"Attempting to set {name} to {value}")
+
+        super().__setattr__(name, value)
 
 
 class PermutationChromosome(Individual):
 
-    def __init__(self, permutation: np.ndarray, n_jobs: int, n_machines: int, time_log: bool=False):
-        super().__init__(n_jobs, n_machines, time_log)
+    def __init__(self, permutation: np.ndarray, n_jobs: int, n_machines: int, objectives: list, time_log: bool=False, watch_individual: bool=False):
+        super().__init__(n_jobs, n_machines, objectives, time_log, watch_individual=watch_individual)
         
         if len(permutation) != self.n_jobs*self.n_machines:
             raise Exception("Bad arguments for number of jobs and machines")
 
         self.permutation: np.ndarray = permutation
 
-    def create_permutation_chromosome(n_jobs: int, n_machines: int, time_log: bool=False):
+    def create_permutation_chromosome(n_jobs: int, n_machines: int, objectives: list, time_log: bool=False, watch_individual: bool=False):
         # Generator funciton for creating an individual object
         permutation = create_multiset_permutation(n_jobs, n_machines)
-        return PermutationChromosome(permutation, n_jobs, n_machines, time_log)
-
+        return PermutationChromosome(permutation=permutation, n_jobs=n_jobs, n_machines=n_machines, objectives=objectives, time_log=time_log, watch_individual=watch_individual)
 
 class QChromosome(Individual):
 
-    def __init__(self, n_jobs : int, n_machines : int, time_log: bool=False) -> None:
-        super().__init__(n_jobs, n_machines, time_log)
+    def __init__(self, n_jobs : int, n_machines : int, objectives: list, time_log: bool=False) -> None:
+        super().__init__(n_jobs, n_machines, objectives, time_log)
         #conversion_dict = {
         #    "Old" : self.convert_permutation, 
         #    "New" : self.convert_permutation_new, 
@@ -225,8 +233,8 @@ class QChromosome(Individual):
 
 class QChromosomeRepairPermutationEncoding(QChromosome):
     
-    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, time_log: bool):
-        super().__init__(n_jobs, n_machines, time_log)
+    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, objectives: list, time_log: bool):
+        super().__init__(n_jobs, n_machines, objectives, time_log)
         # Determine how many bits are needed to represent the job number
         self.n_bits = int(np.log2(self.n_jobs-1) + 1)
         # Create the amplitudes for the chromosome
@@ -294,10 +302,10 @@ class QChromosomePositionEncoding(QChromosomeRepairPermutationEncoding):
     Argsort retuns the indices that would sort the array.
     """
     
-    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, time_log: bool=False) -> None:
+    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, objectives: list, time_log: bool=False) -> None:
         self.individual_cfg = individual_cfg
         self.restrict_permutation = self.individual_cfg.restrict_permutation
-        super().__init__(n_jobs, n_machines, individual_cfg, time_log)
+        super().__init__(n_jobs, n_machines, individual_cfg, objectives, time_log)
         
 
     def convert_permutation(self) -> None:
@@ -364,8 +372,8 @@ class QChromosomeHashPermutationEncoding(QChromosomeRepairPermutationEncoding):
     Finaly, the machine sequences are merged to create the operation based representation.
     """
     
-    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, time_log: bool=False):
-        super().__init__(n_jobs, n_machines, individual_cfg, time_log)
+    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, objectives: list, time_log: bool=False):
+        super().__init__(n_jobs, n_machines, individual_cfg, objectives, time_log)
 
     @measure_runtime("Periodic mapping")
     def periodic_mapping_1(self, x, j):
@@ -445,8 +453,8 @@ class QChromosomeHashMultisetEncoding(QChromosome):
     Finaly, the machine sequences are merged to create the operation based representation.
     """
     
-    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, time_log: bool=False):
-        super().__init__(n_jobs, n_machines, time_log)
+    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, objectives: list, time_log: bool=False):
+        super().__init__(n_jobs, n_machines, objectives, time_log)
 
         # Determine how many bits are needed to represent the job number
         self.n_bits = self.calc_n_bits(n_jobs, n_machines) #int((self.n_jobs*self.n_machines*(np.log(self.n_machines*self.n_jobs) - np.log(self.n_jobs))/np.log(2))) #int(np.log2(self.n_jobs-1) + 1)
@@ -687,8 +695,8 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
     Finaly, the machine sequences are merged to create the operation based representation.
     """
     
-    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, time_log: bool=False):
-        super().__init__(n_jobs, n_machines, time_log)
+    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, objectives: list, time_log: bool=False):
+        super().__init__(n_jobs, n_machines, objectives, time_log)
         # Saving the schedule bounds from config as attributes
         #self.schedule_lb = individual_cfg.schedule_lb
         #self.schedule_ub = individual_cfg.schedule_ub
@@ -1074,11 +1082,9 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
 
 class EnhancedQuantumRandomKeyIndividual(Individual):
     
-    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, time_log: bool=False) -> None:
+    def __init__(self, n_jobs: int, n_machines: int, individual_cfg: DictConfig, objectives: list, time_log: bool=False) -> None:
+        super().__init__(n_jobs, n_machines, objectives, time_log)
         self.individual_cfg = individual_cfg
-        self.n_machines = n_machines
-        self.n_jobs = n_jobs
-        self.time_log = time_log
         self.start_std = self.individual_cfg.start_std
         self.base_permutation = np.repeat(np.arange(self.n_jobs), self.n_machines)
         self.initialize_individual()
