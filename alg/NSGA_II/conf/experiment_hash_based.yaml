@@ -2,9 +2,9 @@ defaults:
  - experiment: basic
     
 experiment:
-    repetitions: 10
+    repetitions: 1
     n_iterations: 150
-    problem_names: ["la21", "la22", "la23", "la24", "la25", "la26", "la27", "la29"] #["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"]
+    problem_names: ["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"] #["la21", "la22", "la23", "la24", "la25", "la26", "la27", "la29"] 
     dump_population: False
 
 
@@ -21,7 +21,7 @@ quantum_hash_base_encoding:
         objectives: ["Makespan", "Mean Completion Time"]
         individual_type: QChromosomeHashMultisetImprovedEncoding #QChromosomeHashMultisetEncoding
         time_log: False
-        rotation_angles: "[0.1*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.1*np.pi, 0]" # "[0.1*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.1*np.pi, 0]"
+        rotation_angles: "[0.1*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.1*np.pi, 0]" #"[0.1*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.1*np.pi, 0]" # "[0.1*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.1*np.pi, 0]"
         group_partitions: 8 # The number of partitions in the population
         individual_cfg:   
             mutation_rate: 0.3

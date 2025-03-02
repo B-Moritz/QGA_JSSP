@@ -51,26 +51,27 @@ def update_objective_space_plot(frames, ax, shared_obj):
         ax.set_title(f"Objective Space iter: {shared_obj.iteration_counter}")        
         ax.set_xlabel("Makespan")
         ax.set_ylabel("Mean Flow Time")
-        
-        for i, start in enumerate(shared_obj.pop_object.front_start_index):
+        cur_pop_object = copy.deepcopy(shared_obj.pop_object)
+        for i, start in enumerate(cur_pop_object.front_start_index):
             #print("New front: " + str(i))
-            cur_front = shared_obj.pop_object.get_front_range(i)
+
+            cur_front = cur_pop_object.get_front_range(i)
 
             #print("front_start_index: " + str(len(shared_obj.pop_object.front_start_index)))
-            cur_color = list(eval(color_mapper)(((i-1)/len(shared_obj.pop_object.front_start_index))))
-            cur_color[-1] = np.max([1 - i/len(shared_obj.pop_object.front_start_index), minimum_opacity])
+            cur_color = list(eval(color_mapper)(((i-1)/len(cur_pop_object.front_start_index))))
+            cur_color[-1] = np.max([1 - i/len(cur_pop_object.front_start_index), minimum_opacity])
             cur_color = tuple(cur_color)
 
             end = cur_front[1]
             if start == shared_obj.pop_object.N:
                 # Plot the rest of the population without lines
-                cur_data = np.asarray([individual.cur_fitness for individual in shared_obj.pop_object.R[shared_obj.pop_object.N:]])
+                cur_data = np.asarray([individual.cur_fitness for individual in cur_pop_object.R[cur_pop_object.N:]])
                 ax.scatter(cur_data[:, 0], cur_data[:, 1], color=cur_color)
             else:
                 x_list = np.empty(cur_front[-1])
                 y_list = np.empty(cur_front[-1])
 
-                for j, ind in enumerate(shared_obj.pop_object.R[cur_front[0] : end]):
+                for j, ind in enumerate(cur_pop_object.R[cur_front[0] : end]):
                     x, y = ind.cur_fitness
                     x_list[j] = x
                     y_list[j] = y

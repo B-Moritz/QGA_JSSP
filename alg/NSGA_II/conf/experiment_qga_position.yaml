@@ -4,7 +4,7 @@ defaults:
 experiment:
     repetitions: 10
     n_iterations: 150
-    problem_names: ["la21", "la22", "la23", "la24", "la25", "la26", "la27", "la29"] #["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"]
+    problem_names: ["ft06", "ft10", "ft20", "abz7", "abz8", "abz9", "la28", "la40"] # ["la21", "la22", "la23", "la24", "la25", "la26", "la27", "la29"]
     experiment_id: 2
     dump_population: False
             
@@ -16,14 +16,14 @@ quantum_position_encoding_restricted:
     pop_object:
         _target_: qmea.QMEAPopulation
         N: 50
-        reset_fraction: 0 # Clip the bottom quarter -> reset chromosomes back to 50/50
+        reset_fraction: 0.1 # Clip the bottom quarter -> reset chromosomes back to 50/50
         activate_schedule: True
         decoding_method: "apply_operation_based_bierwirth"
-        objectives: ["Makespan", "Mean Completion Time"]
+        objectives: ["Makespan", "Mean Flow Time"]
         individual_type: QChromosomePositionEncoding
         time_log: False
-        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]" #"[0.2*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.2*np.pi, 0]" #"[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
-        group_partitions: 5
+        rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
+        group_partitions: 8
         individual_cfg: 
             restrict_permutation: False 
-            mutation_rate: 0.2
+            mutation_rate: 0
