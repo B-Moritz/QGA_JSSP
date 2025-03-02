@@ -94,14 +94,14 @@ class Individual:
             raise Exception("Please create the n-repetition permutation before attempting to create the schedule.")
         
         # Create operation list
-        operation_list = encoding_method(
-            self.n_jobs, 
-            self.n_machines,
-            self.permutation,
-            jssp_problem
-        )
+        #operation_list = encoding_method(
+        #    self.n_jobs, 
+        #    self.n_machines,
+        #    self.permutation,
+        #    jssp_problem
+        #)
         # Create schedule
-        self.schedule = Schedule(operation_list, self.n_jobs, self.n_machines, jssp_problem, objective_1=self.objectives[0], objective_2=self.objectives[1])
+        self.schedule = Schedule(self.permutation, self.n_jobs, self.n_machines, jssp_problem, objective_1=self.objectives[0], objective_2=self.objectives[1])
         # Activate schedule
         if activate_schedule:
             self.schedule.activate_schedule()

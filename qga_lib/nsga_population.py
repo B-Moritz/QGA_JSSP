@@ -333,14 +333,12 @@ class Population:
         List
             Returns list with [start_index, stop_index+1, length_of_front]
         """
-        if i + 1 >= len(self.front_start_index):
+        if i + 1 == len(self.front_start_index):
             # Handeling the last front - rest of the population
             cur_length = 2*self.N - self.front_start_index[i]
             return([self.front_start_index[i], 2*self.N, cur_length])
-        #if i + 2 >= len(self.front_start_index):
-            # Handeling the second to last front
-        #    cur_length = self.N - self.front_start_index[i]
-        #    return([self.front_start_index[i], self.N, cur_length])
+        if i + 1 > len(self.front_start_index):
+            print("Unknown situation")
         else:
             cur_length = self.front_start_index[i+1] - self.front_start_index[i]
             return([self.front_start_index[i], self.front_start_index[i+1], cur_length])

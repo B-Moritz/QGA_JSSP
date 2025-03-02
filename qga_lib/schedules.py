@@ -14,10 +14,11 @@ import matplotlib as mpl
 
 class Schedule:
 
-    def __init__(self, operation_list: List[Operation], n_jobs: int, n_machines: int, jssp_problem: np.ndarray, objective_1: str, objective_2: str):
+    def __init__(self, operation_list: np.ndarray, n_jobs: int, n_machines: int, jssp_problem: np.ndarray, objective_1: str, objective_2: str):
         # A schedule consists of a list of operations where each operation has a start time and a duration as, 
         # well as a machine and job assigned to itself
-        self.operation_list: List[Operation] = operation_list
+        #self.operation_list: List[Operation] = operation_list
+        self.permutation = operation_list
         self.activated: bool = False
         self.n_machines: int = n_machines
         self.n_jobs: int = n_jobs
@@ -40,8 +41,8 @@ class Schedule:
         
         
 
-    def activate_schedule(self):
-        # Performs the Hybrid gifflar and thompson algorithm proposed by (Varela et al., 2005) and (Ripon et al., 2011)
+    def activate_schedule_old(self):
+        # Performs the Hybrid gifflar and thompson algorithm proposed by (Varela et al., 2005)
         # Input is the operation sequence, the technical sequence and the duration matrix
         active_schedule = []
         # Making a copy of the semi activve schedule
@@ -66,6 +67,7 @@ class Schedule:
                 # For each operation, find the lowest start time and the completion time
                 cur_next_machine = self.jssp_problem[0][semi_active_schedule[i].job][T_counter[semi_active_schedule[i].job]]
                 if cur_next_machine == semi_active_schedule[i].machine:
+                    # If the current operation matches the machine, it is regarded as schedulable
                     cur_schedulable_index.append(i)
                     lowest_start_time_i  = np.max([m_time[semi_active_schedule[i].machine], j_time[semi_active_schedule[i].job]])
                     completion_i = lowest_start_time_i + semi_active_schedule[i].duration
@@ -83,24 +85,115 @@ class Schedule:
 
             overall_best_index = 0
             overall_lowest_start_time = np.inf #np.max([m_time[semi_active_schedule[overall_best_index].machine], j_time[semi_active_schedule[overall_best_index].job]])
+            # The candidate set that contians the further reduced schedulable operations
+            B = []
             for operation_index in cur_schedulable_index:
-                if semi_active_schedule[operation_index].machine == machine_k:
-                    # If the current operation is for machine_k, find the lowest starting time 
-                    lowest_start_time_i  = np.max([m_time[semi_active_schedule[operation_index].machine], j_time[semi_active_schedule[operation_index].job]])
-                    if (lowest_start_time_i < found_lowest_completion_time) & (overall_lowest_start_time > lowest_start_time_i):
+                # Find the operation with the lowest start time
+                lowest_start_time_i  = np.max([m_time[semi_active_schedule[operation_index].machine], j_time[semi_active_schedule[operation_index].job]])
+                if (semi_active_schedule[operation_index].machine == machine_k) and (lowest_start_time_i < found_lowest_completion_time):
+                    # If the current operation is for machine_k and the start time is lower than the lowest completion time
+                    # Regard it as part of the candidate operations
+                    B.append(operation_index)
+                    # Check if the start time 
+                    #if  & (overall_lowest_start_time > lowest_start_time_i):
                         # If the starting time is lower than the the lowest completion time and the start time is lower than the previous lowest start time
                         # Store index and start time for that operation
-                        overall_best_index = operation_index
-                        overall_lowest_start_time = lowest_start_time_i
+                    #    overall_best_index = operation_index
+                    #    overall_lowest_start_time = lowest_start_time_i
                     
             # Scedule the selected operation
-            selected_operation = semi_active_schedule.pop(overall_best_index)
-            selected_operation.start = overall_lowest_start_time
+
+            # Find the leftmose operation in the chromosome that is part of candidate set B
+            selected_operation = semi_active_schedule.pop(np.min(B))
+            selected_operation.start = np.max([m_time[selected_operation.machine], j_time[selected_operation.job]])
+            # Update the job and machine next counters
             m_time[selected_operation.machine] = selected_operation.get_completion_time()
             j_time[selected_operation.job] = selected_operation.get_completion_time()
             # Add to the machine index counter
             T_counter[selected_operation.job] += 1
             active_schedule.append(selected_operation)
+        
+        self.activated = True
+        self.operation_list = active_schedule
+
+    def activate_schedule(self):
+        # Performs the Hybrid gifflar and thompson algorithm proposed by (Varela et al., 2005)
+        # Input is the operation sequence, the technical sequence and the duration matrix
+        active_schedule = []
+        # Making a copy of the semi activve schedule
+        semi_active_schedule = copy.deepcopy(self.permutation.tolist())
+        # Initiating the timing lists for machine and job
+        m_time = np.zeros(self.n_machines)
+        j_time = np.zeros(self.n_jobs)
+        T_counter = np.zeros(self.n_jobs, dtype=int) 
+        
+
+        while len(semi_active_schedule) > 0:
+            # Need to find the operation with the lowest completion time among the set of scheduable operations
+            cur_schedulable_index = np.ones(self.n_jobs, dtype=int) * -1
+            cur_best_index_k = 0
+            cur_lowest_complete_time = 0
+            # Extract the start and comlpetion time for the first operation in the list
+            #lowest_start_time_i  = np.max([m_time[semi_active_schedule[0].machine], j_time[semi_active_schedule[0].job]])
+            cur_lowest_complete_time = np.inf#lowest_start_time_i + semi_active_schedule[0].duration
+            i = 0
+            while np.any(cur_schedulable_index == -1) and (i < len(semi_active_schedule)):
+
+                cur_job = semi_active_schedule[i]
+                if cur_schedulable_index[cur_job] == -1: #cur_next_machine == semi_active_schedule[i].machine:
+                    # If the current operation matches the machine, it is regarded as schedulable
+                    cur_schedulable_index[cur_job] = i
+                    cur_machine = self.jssp_problem[0][cur_job][T_counter[cur_job]]
+                    lowest_start_time_i  = np.max([m_time[cur_machine], j_time[cur_job]])
+                    completion_i = lowest_start_time_i + self.jssp_problem[1][cur_job][T_counter[cur_job]]
+                    
+                    if completion_i < cur_lowest_complete_time:
+                        # Update the lowest completion time if it is lower than the current lowest
+                        cur_lowest_complete_time = completion_i
+                        # store the index of the operation
+                        cur_best_index_k = i
+
+                i += 1
+
+            # The lowest completion time
+            found_lowest_completion_time = cur_lowest_complete_time
+            # The machine number of the selected operation
+            machine_k = self.jssp_problem[0][semi_active_schedule[cur_best_index_k]][T_counter[semi_active_schedule[cur_best_index_k]]]
+            # The candidate set that contians the further reduced schedulable operations
+            B = []
+            for operation_index in cur_schedulable_index:
+                # Find the operation with the lowest start time
+                cur_job = semi_active_schedule[operation_index]
+                cur_machine = self.jssp_problem[0][cur_job][T_counter[cur_job]]
+                lowest_start_time_i  = np.max([m_time[cur_machine], j_time[cur_job]])
+                if (cur_machine == machine_k) and (lowest_start_time_i < found_lowest_completion_time):
+                    # If the current operation is for machine_k and the start time is lower than the lowest completion time
+                    # Regard it as part of the candidate operations
+                    B.append(operation_index)
+                    # Check if the start time 
+                    #if  & (overall_lowest_start_time > lowest_start_time_i):
+                        # If the starting time is lower than the the lowest completion time and the start time is lower than the previous lowest start time
+                        # Store index and start time for that operation
+                    #    overall_best_index = operation_index
+                    #    overall_lowest_start_time = lowest_start_time_i
+                    
+            # Scedule the selected operation
+
+            # Find the leftmose operation in the chromosome that is part of candidate set B
+            selected_operation = np.min(B)
+            cur_job = semi_active_schedule[selected_operation]
+            cur_machine = self.jssp_problem[0][cur_job][T_counter[cur_job]]
+            cur_duration = self.jssp_problem[1][cur_job][T_counter[cur_job]]
+            selected_operation_start = np.max([m_time[cur_machine], j_time[cur_job]])
+            cur_operation = Operation(cur_job, cur_machine, cur_duration, selected_operation_start)
+            # Update the job and machine next counters
+            m_time[cur_machine] = cur_operation.get_completion_time()
+            j_time[cur_job] = cur_operation.get_completion_time()
+            # Add to the machine index counter
+            T_counter[cur_operation.job] += 1
+            # Remove the operation from the permutation
+            semi_active_schedule.pop(selected_operation)
+            active_schedule.append(cur_operation)
         
         self.activated = True
         self.operation_list = active_schedule
@@ -324,5 +417,7 @@ class Schedule:
             job_counters[cur_job_number] += 1
             letter_code = self.get_letter_code(cur_job_number, alphabet_size, start_index)
             str_operation_list.append(f"{letter_code}{int(cur_count)}")
+
+        return str_operation_list
 
     

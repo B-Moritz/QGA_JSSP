@@ -7,34 +7,34 @@ services:
     cpuset: "0"
     command: ./run_classical_experiment.bash
 
-  classical_jssp_2:
-    build:
-      context: .
-    volumes:
-      - ./logdata_2:/QGA_JSSP/logdata_2
-    cpuset: "1"
-    command: ./run_classical_experiment_2.bash
-
-  #qga_jssp:
+  #classical_jssp_2:
   #  build:
   #    context: .
   #  volumes:
   #    - ./logdata_2:/QGA_JSSP/logdata_2
   #  cpuset: "1"
-  #  command: ./run_position_experiment.bash
+  #  command: ./run_classical_experiment_2.bash
 
-  #qga_hash_jssp:
-  #  build:
-  #    context: .
-  #  volumes:
-  #    - ./logdata_2:/QGA_JSSP/logdata_2
-  #  cpuset: "2"
-  #  command: ./run_hash_based.bash
+  qga_jssp:
+    build:
+      context: .
+    volumes:
+      - ./logdata_2:/QGA_JSSP/logdata_2
+    cpuset: "1"
+    command: ./run_position_experiment.bash
 
-  #qga_improv_rnadom_key:
-  #  build:
-  #    context: .
-  #  volumes:
-  #    - ./logdata_2:/QGA_JSSP/logdata_2
-  #  cpuset: "2"
-  #  command: ./run_improved_random_key.bash
+  qga_hash_jssp:
+    build:
+      context: .
+    volumes:
+      - ./logdata_2:/QGA_JSSP/logdata_2
+    cpuset: "2"
+    command: ./run_hash_based.bash
+
+  qga_improv_rnadom_key:
+    build:
+      context: .
+    volumes:
+      - ./logdata_2:/QGA_JSSP/logdata_2
+    cpuset: "3"
+    command: ./run_improved_random_key.bash

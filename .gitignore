@@ -166,3 +166,5 @@ cython_debug/
 #.idea/
 /logdata
 /logdata_2
+compose_log.txt
+compose_error_log.txt
