@@ -18,11 +18,11 @@ quantum_hash_base_encoding:
         reset_fraction: 0.1 # Clip the bottom % -> reset chromosomes back to 50/50
         activate_schedule: True
         decoding_method: "apply_operation_based_bierwirth"
-        objectives: ["Makespan", "Mean Completion Time"]
+        objectives: ["Makespan", "Mean Flow Time"]
         individual_type: QChromosomeHashMultisetImprovedEncoding #QChromosomeHashMultisetEncoding
         time_log: False
         rotation_angles: "[0.1*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.1*np.pi, 0]" #"[0.1*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.1*np.pi, 0]" # "[0.1*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.1*np.pi, 0]"
         group_partitions: 8 # The number of partitions in the population
         individual_cfg:
-            mutation_rate: 0.3
+            mutation_rate: 0
             reset_frequency: 3

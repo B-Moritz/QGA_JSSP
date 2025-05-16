@@ -19,7 +19,7 @@ qmea_enhanced_random_key:
         reset_fraction: 0.1 # Clip the bottom quarter -> reset chromosomes back to 50/50
         activate_schedule: True
         decoding_method: "apply_operation_based_bierwirth"
-        objectives: ["Makespan", "Mean Completion Time"]
+        objectives: ["Makespan", "Mean Flow Time"]
         individual_type: EnhancedQuantumRandomKeyIndividual
         time_log: False
         rotation_angles: "[5, 0, 2, 0, 5, 0, 2, 0]" #"[0.2*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.2*np.pi, 0]" #"[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"

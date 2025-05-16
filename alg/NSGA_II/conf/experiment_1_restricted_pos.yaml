@@ -4,7 +4,7 @@ defaults:
 experiment:
     repetitions: 1
     n_iterations: 150
-    problem_names: ['ta56'] #['abz5'] #, 'abz6', 'abz7', 'abz8', 'abz9', 'ft06', 'ft10', 'ft20']
+    problem_names: ['ft20'] #['abz5'] #, 'abz6', 'abz7', 'abz8', 'abz9', 'ft06', 'ft10', 'ft20']
     experiment_id: 2
     dump_population: True
             
@@ -23,7 +23,7 @@ quantum_position_encoding_restricted:
         individual_type: QChromosomePositionEncoding
         time_log: False
         rotation_angles: "[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]" #"[0.2*np.pi, 0, 0.02*np.pi, 0, 0.02*np.pi, 0, 0.2*np.pi, 0]" #"[0.02*np.pi, 0, 0.05*np.pi, 0, 0.05*np.pi, 0, 0.02*np.pi, 0]"
-        group_partitions: 3
+        group_partitions: 5
         individual_cfg: 
             restrict_permutation: False 
             mutation_rate: 0.2

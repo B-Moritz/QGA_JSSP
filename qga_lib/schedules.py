@@ -14,11 +14,11 @@ import matplotlib as mpl
 
 class Schedule:
 
-    def __init__(self, operation_list: np.ndarray, n_jobs: int, n_machines: int, jssp_problem: np.ndarray, objective_1: str, objective_2: str):
+    def __init__(self, operation_list: List[Operation], n_jobs: int, n_machines: int, jssp_problem: np.ndarray, objective_1: str, objective_2: str):
         # A schedule consists of a list of operations where each operation has a start time and a duration as, 
         # well as a machine and job assigned to itself
-        #self.operation_list: List[Operation] = operation_list
-        self.permutation = operation_list
+        self.operation_list: List[Operation] = operation_list
+        #self.permutation = operation_list
         self.activated: bool = False
         self.n_machines: int = n_machines
         self.n_jobs: int = n_jobs
@@ -41,7 +41,7 @@ class Schedule:
         
         
 
-    def activate_schedule_old(self):
+    def activate_schedule(self):
         # Performs the Hybrid gifflar and thompson algorithm proposed by (Varela et al., 2005)
         # Input is the operation sequence, the technical sequence and the duration matrix
         active_schedule = []
@@ -116,7 +116,7 @@ class Schedule:
         self.activated = True
         self.operation_list = active_schedule
 
-    def activate_schedule(self):
+    def activate_schedule_old(self):
         # Performs the Hybrid gifflar and thompson algorithm proposed by (Varela et al., 2005)
         # Input is the operation sequence, the technical sequence and the duration matrix
         active_schedule = []

@@ -94,14 +94,14 @@ class Individual:
             raise Exception("Please create the n-repetition permutation before attempting to create the schedule.")
         
         # Create operation list
-        #operation_list = encoding_method(
-        #    self.n_jobs, 
-        #    self.n_machines,
-        #    self.permutation,
-        #    jssp_problem
-        #)
+        operation_list = encoding_method(
+            self.n_jobs, 
+            self.n_machines,
+            self.permutation,
+            jssp_problem
+        )
         # Create schedule
-        self.schedule = Schedule(self.permutation, self.n_jobs, self.n_machines, jssp_problem, objective_1=self.objectives[0], objective_2=self.objectives[1])
+        self.schedule = Schedule(operation_list, self.n_jobs, self.n_machines, jssp_problem, objective_1=self.objectives[0], objective_2=self.objectives[1])
         # Activate schedule
         if activate_schedule:
             self.schedule.activate_schedule()
@@ -702,7 +702,7 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
         #self.schedule_ub = individual_cfg.schedule_ub
         self.reset_frequency = individual_cfg.reset_frequency
         # Determine how many bits are needed to represent the job number
-        self.n_bits = self.calc_n_bits(n_jobs, n_machines) #int((self.n_jobs*self.n_machines*(np.log(self.n_machines*self.n_jobs) - np.log(self.n_jobs))/np.log(2))) #int(np.log2(self.n_jobs-1) + 1)
+        self.n_bits = self.calc_n_bits(n_jobs, n_machines) # int((self.n_jobs*self.n_machines*(np.log(self.n_machines*self.n_jobs) - np.log(self.n_jobs))/np.log(2))) #int(np.log2(self.n_jobs-1) + 1)
         # Create the amplitudes for the chromosome
         self.chromo_shape = (2, self.n_bits)
         self.binary_chromosome = np.ones(self.chromo_shape) # Dimensions: the number of amplitudes, machine number, number of bits for one job sequence
@@ -780,7 +780,7 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
             # returning the number of large groups within the binary value gives the coresponding permutation rank
             return binary_value // (group_size + 1)
         else: 
-            # If the binary_value is in the last part, offset the obtained rank with the number of binary values covered by the prio partition
+            # If the binary_value is in the last part, offset the obtained rank with the number of binary values covered by the prior partition
             return n_larger_groups + ((binary_value - large_groups_partition) // group_size)
 
     @measure_runtime("Find position")
@@ -1098,7 +1098,7 @@ class EnhancedQuantumRandomKeyIndividual(Individual):
     def periodic_triangular_function_vectorized(self, x: np.ndarray, j: int) -> np.ndarray:
         y = lambda x, offset, sign: sign*(x - offset)
         y_res = np.empty_like(x)
-        
+
         x1 = x[(np.floor(x) // j) % 2 == 0]
         x2 = x[(np.floor(x) // j) % 2 > 0]
 
@@ -1110,7 +1110,7 @@ class EnhancedQuantumRandomKeyIndividual(Individual):
     def measure(self):
         self.random_keys = self.periodic_triangular_function_vectorized(np.round(np.random.normal(0, self.standard_deviations) + self.positions).astype(int), self.n_jobs-1)
 
-    def convert_permutation(self): 
+    def convert_permutation(self):
         self.permutation = self.base_permutation[np.argsort(self.random_keys)]
 
     def rotate(self, 
@@ -1133,7 +1133,7 @@ class EnhancedQuantumRandomKeyIndividual(Individual):
 
         rotation_angles = np.array(raw_rotation_angles)
         std_deltas = np.array(raw_std_deltas)
-
+        
         b_keys = b.random_keys
         x_keys = self.random_keys
         x_filtered = self.positions
@@ -1152,7 +1152,7 @@ class EnhancedQuantumRandomKeyIndividual(Individual):
         self.standard_deviations[unequal_cases_overshoot] = np.abs(self.standard_deviations[unequal_cases_overshoot] + std_deltas[1])
         self.standard_deviations[equal_cases_undershoot] = np.abs(self.standard_deviations[equal_cases_undershoot] + std_deltas[2])
         self.standard_deviations[unequal_cases_undershoot] = np.abs(self.standard_deviations[unequal_cases_undershoot] + std_deltas[3])
-        # If the standard deviaiton has become negative, make sure it is 
+        # If the standard deviaiton has become negative, make sure it is
         #self.standard_deviations[self.standard_deviations < 0] = 0
         # Handle values outside the supported range
         self.positions = np.abs(x_filtered) % self.n_jobs
