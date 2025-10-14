@@ -11,7 +11,7 @@ The folder called "alg" contains different algorithms:
 
 Note that the NSGA-II and the QMGA algorithms are located under alg/NSGA_II. The algorithms can be run by executing the run_algorithm.py script. If the experiment should be executed without GUI and performance logging, the run_experiment.py should be used. The algorithms are generally constructed by separating the population object, individual (solution) object and the overall algorithm class. A lot of the code created for the algorithms can be found under qga_lib in files like individual.py (contains all the different representation that were tried), nsga_population.py (contains fast-non-dominated sorting and crowding distance), schedules (contains hybrid GT).
 
-### Running the optimizers for JSSP
+### Running the optimizers for the multi-objective JSSP
 To run the algorithms, the python environment needs to be installed first. This can be done by creating a virtual environment locally on the computer and installing the content of the requirements.txt file. Note also that the install.py file must be executed to install the library code for the algorithm. 
 
 The configuration for the algorithm execution can be changed in the QGA_JSSP\alg\NSGA_II\conf file location. In this case Hydra was used to handle configurations for the experiments.To run one of the algorithms, pick a config file (for example experiment_rkQMGA.py) and run the following command:

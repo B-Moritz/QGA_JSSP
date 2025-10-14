@@ -108,6 +108,7 @@ def apply_operation_based_bierwirth(
         except:
             print(j_rep_permutation)
             print(np.bincount(j_rep_permutation))
+            pdb.set_trace()
             exit()
         # First determine the start time for the operation
         if m_start_t[cur_machine] >= j_start_t[cur_job]:

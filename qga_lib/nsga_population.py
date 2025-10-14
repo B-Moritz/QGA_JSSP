@@ -352,9 +352,9 @@ class Population:
             Array containing the metrics: makespan [min, avg], mean flow time [min, avg], spread
         """
         if is_last_iteration:
-            cur_spread, cur_length = self.calculate_spread_euclidian(is_last_iteration)
+            cur_spread, cur_length = [0, 0] #self.calculate_spread_euclidian(is_last_iteration)
         else:
-            cur_spread, cur_length = self.calculate_spread_euclidian(is_last_iteration)
+            cur_spread, cur_length = [0, 0] #self.calculate_spread_euclidian(is_last_iteration)
 
         cur_range = self.get_front_range(0)
         result = {self.objectives[0] : {"Avg" : 0, "Min": np.inf, "Max" : 0}, 

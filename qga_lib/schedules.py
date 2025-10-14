@@ -101,7 +101,7 @@ class Schedule:
                     #    overall_best_index = operation_index
                     #    overall_lowest_start_time = lowest_start_time_i
                     
-            # Scedule the selected operation
+            # Schedule the selected operation
 
             # Find the leftmose operation in the chromosome that is part of candidate set B
             selected_operation = semi_active_schedule.pop(np.min(B))

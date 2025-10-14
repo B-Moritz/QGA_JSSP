@@ -888,7 +888,6 @@ class QChromosomeHashMultisetImprovedEncoding(QChromosome):
             
             counter += 1
 
-
     @measure_runtime("Decode bit string")
     def convert_permutation(self):
         self.permutation = np.zeros((self.n_machines, self.n_jobs), dtype=int)
