@@ -45,6 +45,7 @@ USER qmea
 # Copy the source code into the container.
 COPY . .
 RUN mkdir -p logdata_3
+RUN chmod 777 logdata_3
 #RUN sudo chmod 700 run_current_experiment.bash
 # Expose the port that the application listens on.
 #EXPOSE 8000
