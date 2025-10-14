@@ -31,10 +31,10 @@ services:
     cpuset: "2"
     command: ./run_hash_based.bash
 
-  qga_improv_rnadom_key:
-    build:
-      context: .
-    volumes:
-      - ./logdata_4:/QGA_JSSP/logdata_3
-    cpuset: "3"
-    command: ./run_improved_random_key.bash
+  #qga_improv_rnadom_key:
+  #  build:
+  #    context: .
+  #  volumes:
+  #    - ./logdata_4:/QGA_JSSP/logdata_3
+  #  cpuset: "3"
+  #  command: ./run_improved_random_key.bash
