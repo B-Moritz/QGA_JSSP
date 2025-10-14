@@ -3,7 +3,7 @@ services:
     build:
       context: .
     volumes:
-      - ./logdata_3:/QGA_JSSP/logdata_2
+      - ./logdata_3:/QGA_JSSP/logdata_3
     cpuset: "0"
     command: ./run_classical_experiment.bash
 
@@ -19,7 +19,7 @@ services:
     build:
       context: .
     volumes:
-      - ./logdata_3:/QGA_JSSP/logdata_2
+      - ./logdata_3:/QGA_JSSP/logdata_3
     cpuset: "1"
     command: ./run_position_experiment.bash
 
@@ -27,7 +27,7 @@ services:
     build:
       context: .
     volumes:
-      - ./logdata_3:/QGA_JSSP/logdata_2
+      - ./logdata_3:/QGA_JSSP/logdata_3
     cpuset: "2"
     command: ./run_hash_based.bash
 
@@ -35,6 +35,6 @@ services:
     build:
       context: .
     volumes:
-      - ./logdata_4:/QGA_JSSP/logdata_2
+      - ./logdata_4:/QGA_JSSP/logdata_3
     cpuset: "3"
     command: ./run_improved_random_key.bash
