@@ -2,6 +2,8 @@
 
 ls -la /QGA_JSSP/logdata_3
 
+
+
 #python ./alg/NSGA_II/run_experiment.py -cn experiment_qga_position.yaml
 
 for pop_size in 50
