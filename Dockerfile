@@ -51,10 +51,12 @@ USER root
 RUN python install.py
 RUN chown -R qmea /QGA_JSSP
 RUN chmod 755 run_*
-
+RUN mkdir -p logdata_3
+RUN chown qmea logdata_3
+RUN chmod 755 logdata_3
 #RUN echo "/app/qga_lib" > /usr/local/lib/python3.9/site-packages/qga_lib.pth
 USER qmea
-RUN mkdir -p logdata_3
+
 
 # Run the application.
 CMD ./run_current_experiment.bash
