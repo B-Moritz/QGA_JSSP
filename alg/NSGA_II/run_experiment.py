@@ -5,6 +5,7 @@ import os
 import datetime
 import time
 import re
+import subprocess
 
 from base_nsga_ii import ClassicalNSGAII
 from qmea import QMEA
@@ -30,6 +31,7 @@ def run_experiment(cfg: DictConfig):
         log_path = os.path.join(par_dir, logdata_path + f"_{cfg.experiment.experiment_id}_{cur_timestamp}")
         if not os.path.exists(log_path):
             # Create the log folder
+            print(subprocess.run(["ls", "-lah"]))
             os.mkdir(log_path)
             print("Created log direcotry at: " + str(log_path))
         else:
